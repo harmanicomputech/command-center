@@ -1,0 +1,21 @@
+<!doctype html>
+<html><body style="margin:0;background:transparent">
+<div id="icon"></div>
+<script>
+  const params = new URLSearchParams(location.search);
+  const size = Number(params.get('size'));
+  const maskable = params.get('maskable') === '1';
+  const inner = maskable ? 0.62 : 1; // maskable icons keep the mark in the safe zone
+  const radius = maskable ? 0 : size * 0.225;
+  const mark = size * (maskable ? 0.5 : 0.62);
+  document.getElementById('icon').innerHTML = `
+  <div style="width:${size}px;height:${size}px;border-radius:${radius}px;display:grid;place-items:center;
+    background:linear-gradient(145deg,#2b8466,#0f6e4f 50%,#0a4f39);">
+    <svg width="${mark}" height="${mark}" viewBox="0 0 24 24" fill="none">
+      <path d="M19.5 8.2A8.5 8.5 0 1 0 19.5 15.8" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M15.6 9.9a4.3 4.3 0 1 0 0 4.2" stroke="white" stroke-opacity=".7" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="19.6" cy="12" r="2.3" fill="#e0a526"/>
+    </svg>
+  </div>`;
+</script>
+</body></html>

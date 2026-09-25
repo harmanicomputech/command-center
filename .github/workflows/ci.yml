@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: sqlite3, zip, gd, mbstring
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: npm ci && npm run build
+      - run: cp .env.example .env && php artisan key:generate
+      - run: vendor/bin/pint --test
+      - run: php artisan test
+
+  # Upload packages for the shared host. The full zip's .env holds
+  # placeholders that the app replaces with fresh secrets on its first
+  # request, so nothing secret is published with this public repository.
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: zip
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+      - run: scripts/build-shared-hosting.sh --ci
+      - run: scripts/build-shared-hosting.sh --update
+      - uses: actions/upload-artifact@v4
+        with:
+          name: command-center-upload-packages
+          path: dist/*.zip
+          retention-days: 90
