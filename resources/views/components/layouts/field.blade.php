@@ -19,11 +19,10 @@
             @else
                 <a href="{{ route('field.home') }}" class="flex min-w-0 flex-1 items-center gap-2.5">
                     <x-logo :size="30" />
-                    <span class="truncate text-[15px] font-bold tracking-tight">{{ $appName }}</span>
+                    <span class="hidden truncate text-[15px] font-bold tracking-tight min-[420px]:inline">{{ $appName }}</span>
                 </a>
             @endif
-            {{ $pill ?? '' }}
-            <span x-show="! $store.network.online" x-cloak class="badge badge-warn"><x-icon name="wifi-off" />Offline</span>
+            <x-sync-pill />
         </div>
     </header>
 

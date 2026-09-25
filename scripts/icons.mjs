@@ -12,7 +12,7 @@ key-round landmark layers layout-dashboard list-todo loader-circle lock log-out 
 medal megaphone menu message-square monitor moon newspaper palette panel-left pencil phone plus printer
 radio refresh-cw rotate-ccw scroll-text search server settings shield shield-check sliders-horizontal
 smartphone sparkle sparkles square-check-big sun target trash-2 trending-down trending-up triangle-alert
-trophy upload user user-plus user-round-check users vote wifi-off x zap minus circle-dot star
+trophy upload user send user-plus user-round-check users vote wifi-off x zap minus circle-dot star
 `.trim().split(/\s+/).sort();
 
 const entries = ICONS.map((name) => {

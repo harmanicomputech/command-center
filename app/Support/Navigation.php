@@ -38,6 +38,7 @@ class Navigation
             ],
             'Field' => [
                 ['People', 'people', 'users', ['people', 'people.*'], null],
+                ['Team & invites', 'team', 'user-plus', ['team'], [UserRole::Admin, UserRole::LgaLeader, UserRole::WardCoordinator]],
                 ['Registrations', 'voters', 'user-round-check', ['voters', 'voters.*'], null],
                 ['Tasks', 'tasks', 'list-todo', ['tasks', 'tasks.*'], null],
                 ['Issues', 'issues', 'triangle-alert', ['issues', 'issues.*'], null],
@@ -96,7 +97,8 @@ class Navigation
         return collect([
             ['dashboard', 'Home'],
             ['areas', 'Map'],
-            ['people', 'Field'],
+            ['voters', 'Field'],
+            ['team', 'Team'],
             ['messages', 'Engage'],
             ['users', 'Users'],
             ['system', 'System'],

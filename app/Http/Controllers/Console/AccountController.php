@@ -11,9 +11,11 @@ use Illuminate\View\View;
 
 class AccountController extends Controller
 {
-    public function show(Request $request): View
+    public function show(Request $request): View|RedirectResponse
     {
-        return view($request->user()->role->usesFieldApp() ? 'field.me' : 'account.show', ['user' => $request->user()]);
+        return $request->user()->role->usesFieldApp()
+            ? redirect()->route('field.me')
+            : view('account.show', ['user' => $request->user()]);
     }
 
     public function update(Request $request): RedirectResponse

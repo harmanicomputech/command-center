@@ -71,6 +71,7 @@ class AuthController extends Controller
         // Field agents stay signed in on their phone so they can work offline.
         Auth::login($user, remember: $request->boolean('remember') || $user->role->usesFieldApp());
         $request->session()->regenerate();
+        $request->session()->put('auth_at', now()->timestamp);
         $user->forceFill(['last_login_at' => now(), 'last_seen_at' => now()])->saveQuietly();
         Audit::record('auth.login', 'Signed in');
 

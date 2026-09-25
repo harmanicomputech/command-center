@@ -24,6 +24,7 @@
             document.querySelector('meta[name="theme-color"]').content = dark ? '#0e0e0d' : '#f7f6f3';
         })();
     </script>
+    @auth<script src="/outbox.js"></script>@endauth
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     {{ $head ?? '' }}
 </head>

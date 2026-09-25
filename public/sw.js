@@ -10,11 +10,14 @@
  * - The page cache is cleared on logout.
  * Bump VERSION on every release (scripts/build-shared-hosting.sh does it).
  */
-const VERSION = 'v1';
+importScripts('/outbox.js');
+
+const VERSION = 'v2';
 const SHELL = `cc-shell-${VERSION}`;
 const PAGES = 'cc-pages';
 const SHELL_FILES = [
   '/offline',
+  '/outbox.js',
   '/manifest.webmanifest',
   '/icons/icon-32.png',
   '/icons/icon-192.png',
@@ -23,7 +26,8 @@ const SHELL_FILES = [
   '/fonts/inter-latin-ext.woff2',
 ];
 // Pages safe to keep offline: no voter or staff phone numbers on any of them.
-const DATA_PAGES = [/^\/$/, /^\/field(\/(register|tasks|issues|me))?$/, /^\/areas(\/[^/]+){0,2}$/, /^\/brief$/];
+// (The field outbox page lists only this phone's own queue, from IndexedDB.)
+const DATA_PAGES = [/^\/$/, /^\/field(\/(register|tasks|issues|me|outbox))?$/, /^\/areas(\/[^/]+){0,2}$/, /^\/brief$/];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -71,7 +75,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (/^\/(build|fonts|icons)\//.test(url.pathname) || url.pathname === '/manifest.webmanifest') {
+  if (/^\/(build|fonts|icons)\//.test(url.pathname) || url.pathname === '/manifest.webmanifest' || url.pathname === '/outbox.js') {
     event.respondWith(shell(request));
   }
 });
@@ -110,3 +114,16 @@ async function shell(request) {
   }
   return response;
 }
+
+// The outbox (public/outbox.js) sends what is waiting even after the app is
+// closed, where the browser supports Background Sync. A failure throws, so
+// the browser tries again later.
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'cc-outbox') {
+    event.waitUntil(self.ccOutbox.sync(false).then((state) => {
+      if (state.offline || (state.pending > 0 && state.auth !== false)) {
+        throw new Error('Outbox not empty yet');
+      }
+    }));
+  }
+});

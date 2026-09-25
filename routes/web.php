@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\FieldSyncController;
 use App\Http\Controllers\Console\AccountController;
 use App\Http\Controllers\Console\AreaController;
 use App\Http\Controllers\Console\AuditController;
@@ -8,8 +9,11 @@ use App\Http\Controllers\Console\DashboardController;
 use App\Http\Controllers\Console\SearchController;
 use App\Http\Controllers\Console\SettingsController;
 use App\Http\Controllers\Console\SystemController;
+use App\Http\Controllers\Console\TeamController;
 use App\Http\Controllers\Console\UserController;
+use App\Http\Controllers\Console\VoterController;
 use App\Http\Controllers\FieldController;
+use App\Http\Controllers\InviteController;
 use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RunnerController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +24,9 @@ Route::post('/setup', [AuthController::class, 'setup'])->middleware('throttle:5,
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::view('/offline', 'offline')->name('offline');
+Route::view('/privacy', 'privacy')->name('privacy');
+Route::get('/invite/{token}', [InviteController::class, 'show'])->middleware('throttle:30,1')->name('invite');
+Route::post('/invite/{token}', [InviteController::class, 'accept'])->middleware('throttle:10,1')->name('invite.accept');
 Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('manifest');
 
 // For an external pinger on hosts without per-minute cron (URL on the System page).
@@ -31,9 +38,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [FieldController::class, 'home'])->name('home');
         Route::get('/me', [FieldController::class, 'me'])->name('me');
         Route::get('/register', [FieldController::class, 'register'])->name('register');
+        Route::post('/register', [FieldController::class, 'store'])->middleware('throttle:60,1')->name('register.store');
+        Route::get('/outbox', [FieldController::class, 'outbox'])->name('outbox');
+        Route::get('/registrations', [FieldController::class, 'registrations'])->name('registrations');
         Route::get('/tasks', [FieldController::class, 'tasks'])->name('tasks');
         Route::get('/issues', [FieldController::class, 'issues'])->name('issues');
     });
+
+    // The Field Force outbox (session auth; the token route gives a fresh CSRF token).
+    Route::get('/api/field/token', [FieldSyncController::class, 'token'])->name('field.token');
+    Route::post('/api/field/sync', [FieldSyncController::class, 'sync'])->middleware('throttle:120,1')->name('field.sync');
 
     Route::get('/account', [AccountController::class, 'show'])->name('account');
     Route::put('/account', [AccountController::class, 'update'])->name('account.update');
@@ -48,7 +62,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/areas/{lga}', [AreaController::class, 'lga'])->name('areas.lga');
         Route::get('/areas/{lga}/{ward}', [AreaController::class, 'ward'])->name('areas.ward');
 
+        Route::get('/voters', [VoterController::class, 'index'])->name('voters');
+        Route::post('/voters/{voter}/verify', [VoterController::class, 'verify'])->name('voters.verify');
+        Route::post('/voters/{voter}/invalid', [VoterController::class, 'invalidate'])->name('voters.invalidate');
+        Route::post('/voters/{voter}/resolve', [VoterController::class, 'resolve'])->name('voters.resolve');
+
+        Route::middleware('role:admin,lga_leader,ward_coordinator')->group(function () {
+            Route::get('/team', [TeamController::class, 'index'])->name('team');
+            Route::post('/team', [TeamController::class, 'store'])->middleware('throttle:30,1')->name('team.store');
+            Route::post('/team/{member}/reinvite', [TeamController::class, 'reinvite'])->name('team.reinvite');
+            Route::post('/team/{member}/revoke', [TeamController::class, 'revoke'])->name('team.revoke');
+        });
+
         Route::middleware('role:admin')->group(function () {
+            Route::get('/voters/export', [VoterController::class, 'export'])->name('voters.export');
             Route::get('/users', [UserController::class, 'index'])->name('users');
             Route::post('/users', [UserController::class, 'store'])->name('users.store');
             Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');

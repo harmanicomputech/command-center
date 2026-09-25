@@ -7,7 +7,27 @@
         </div>
     </section>
 
-    <div class="mt-6 space-y-4">
+    <div class="mt-6 grid grid-cols-3 gap-3">
+        <div class="card p-4 text-center"><p class="num text-2xl font-bold">{{ number_format($stats['total']) }}</p><p class="text-xs text-muted">Registered</p></div>
+        <div class="card p-4 text-center"><p class="num text-2xl font-bold">{{ $stats['streak'] }}</p><p class="text-xs text-muted">Day streak</p></div>
+        <div class="card p-4 text-center"><p class="num text-2xl font-bold">{{ $stats['rank'] ? '#'.$stats['rank'] : '—' }}</p><p class="text-xs text-muted">In ward</p></div>
+    </div>
+
+    <div class="mt-4 space-y-4">
+        <div class="card divide-y divide-line">
+            <a href="{{ route('field.registrations') }}" class="flex min-h-12 items-center justify-between gap-3 p-4 text-sm font-semibold">
+                <span class="flex items-center gap-3"><x-icon name="user-round-check" class="text-subtle" />My registrations</span>
+                <x-icon name="chevron-right" class="text-subtle" />
+            </a>
+            <a href="{{ route('field.outbox') }}" class="flex min-h-12 items-center justify-between gap-3 p-4 text-sm font-semibold">
+                <span class="flex items-center gap-3"><x-icon name="cloud-upload" class="text-subtle" />Waiting on this phone</span>
+                <span class="num text-subtle" x-data x-text="$store.outbox.total"></span>
+            </a>
+            <a href="{{ route('privacy') }}" class="flex min-h-12 items-center justify-between gap-3 p-4 text-sm font-semibold">
+                <span class="flex items-center gap-3"><x-icon name="shield-check" class="text-subtle" />Privacy notice</span>
+                <x-icon name="chevron-right" class="text-subtle" />
+            </a>
+        </div>
         <div class="card divide-y divide-line">
             <div class="flex items-center justify-between gap-4 p-4">
                 <span class="flex items-center gap-3 text-sm font-semibold"><x-icon name="moon" class="text-subtle" />Dark mode</span>
