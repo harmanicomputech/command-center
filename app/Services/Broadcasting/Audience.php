@@ -7,6 +7,7 @@ use App\Models\Lga;
 use App\Models\SmsOptOut;
 use App\Models\User;
 use App\Services\Segments;
+use App\Support\Aggregates;
 use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -89,7 +90,7 @@ class Audience
             return $this->recipients($audience, $viewer)->count();
         }
 
-        return $this->voters($audience['filters'], $viewer)->distinct()->count('voters.phone_hash');
+        return Aggregates::remember('audience.count', $viewer, $audience['filters'], fn () => $this->voters($audience['filters'], $viewer)->distinct()->count('voters.phone_hash'));
     }
 
     private function voters(array $filters, User $viewer): Builder

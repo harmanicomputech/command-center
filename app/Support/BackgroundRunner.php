@@ -2,6 +2,10 @@
 
 namespace App\Support;
 
+use App\Models\User;
+use App\Services\DailyBrief;
+use App\Services\MapLayers;
+use App\Services\Segments;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -104,10 +108,21 @@ class BackgroundRunner
             // 6:30 AM Lagos: the AI "what to push next" suggestion, ready for the brief.
             'push-next' => [self::dailyAt($now, '06:30'), fn () => Artisan::call('ai:suggest')],
             // RSS news tracker, with keyword alerts.
+            // Keep the statewide dashboard figures warm, so nobody waits for them.
+            'warm' => [self::everyMinutes($now, 5), fn () => self::warm()],
             // After the retention date, voter personal data is erased in batches.
             'retention' => [self::everyMinutes($now, 15), fn () => Artisan::call('privacy:retention')],
             'news' => [self::everyMinutes($now, (int) config('messaging.news_every_minutes')), fn () => Artisan::call('news:fetch')],
         ];
+    }
+
+    /** Compute the statewide dashboard aggregates ahead of the first visit. */
+    public static function warm(): void
+    {
+        $viewer = new User(['role' => 'admin']);
+        app(DailyBrief::class)->build($viewer);
+        app(MapLayers::class)->build($viewer);
+        app(Segments::class)->describe($viewer, []);
     }
 
     private function runDueTasks(): void

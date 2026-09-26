@@ -7,6 +7,7 @@ use App\Models\PastResult;
 use App\Models\User;
 use App\Models\Voter;
 use App\Models\Ward;
+use App\Support\Aggregates;
 use App\Support\Settings;
 use Illuminate\Support\Collection;
 
@@ -52,7 +53,7 @@ class Intelligence
      */
     public function wards(?User $viewer = null, ?int $lgaId = null): Collection
     {
-        $all = collect($this->memo['wards'] ??= $this->computeWards());
+        $all = collect($this->memo['wards'] ??= Aggregates::remember('zones.wards', null, [], fn () => $this->computeWards()));
 
         return $all->filter(function ($row) use ($viewer, $lgaId) {
             return ($lgaId === null || $row['lga_id'] === $lgaId) && ($viewer === null || $viewer->role->isStatewide() || in_array($row['id'], $this->visibleWardIds($viewer), true));
@@ -64,7 +65,7 @@ class Intelligence
      */
     public function lgas(?User $viewer = null): Collection
     {
-        $all = collect($this->memo['lgas'] ??= $this->computeLgas());
+        $all = collect($this->memo['lgas'] ??= Aggregates::remember('zones.lgas', null, [], fn () => $this->computeLgas()));
 
         return $all->filter(fn ($row) => $viewer === null || $viewer->role->isStatewide() || in_array($row['id'], Lga::query()->visibleTo($viewer)->pluck('id')->all(), true))->values();
     }

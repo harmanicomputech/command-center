@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PastResult;
 use App\Services\Intelligence;
 use App\Services\PastResultImporter;
+use App\Support\Aggregates;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,6 +39,9 @@ class ResultsController extends Controller
 
     public function import(Request $request, PastResultImporter $importer): RedirectResponse
     {
+        // Zones, points and targets may change: recompute cached figures.
+        Aggregates::flush();
+
         $data = $request->validate([
             'year' => ['required', 'integer', 'min:1999', 'max:2027'],
             'file' => ['required', 'file', 'max:8192', 'mimetypes:text/plain,text/csv,application/csv,application/vnd.ms-excel'],
@@ -56,6 +60,9 @@ class ResultsController extends Controller
 
     public function destroy(Request $request, int $year): RedirectResponse
     {
+        // Zones, points and targets may change: recompute cached figures.
+        Aggregates::flush();
+
         $rows = PastResult::query()->where('year', $year)->delete();
         Audit::record('results.delete', "Deleted the {$year} results", rows: $rows);
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Console;
 use App\Http\Controllers\Controller;
 use App\Models\Lga;
 use App\Services\Intelligence;
+use App\Support\Aggregates;
 use App\Support\Audit;
 use App\Support\Settings;
 use Illuminate\Http\RedirectResponse;
@@ -26,6 +27,9 @@ class PresetController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        // Zones, points and targets may change: recompute cached figures.
+        Aggregates::flush();
+
         $data = $request->validate([
             'reach' => ['array'],
             'reach.*' => ['integer', 'min:10', 'max:100'],

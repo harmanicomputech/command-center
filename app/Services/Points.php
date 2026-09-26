@@ -11,6 +11,7 @@ use App\Models\TaskReport;
 use App\Models\User;
 use App\Models\Voter;
 use App\Models\Ward;
+use App\Support\Aggregates;
 use App\Support\Settings;
 use App\Support\Time;
 use Illuminate\Support\Carbon;
@@ -99,6 +100,11 @@ class Points
      */
     public function agents(?int $wardId = null, ?int $lgaId = null, ?Carbon $since = null): Collection
     {
+        return Aggregates::remember('points.agents', null, [$wardId, $lgaId, $since?->toIso8601String()], fn () => $this->computeAgents($wardId, $lgaId, $since));
+    }
+
+    private function computeAgents(?int $wardId, ?int $lgaId, ?Carbon $since): Collection
+    {
         $agents = User::query()->where('role', UserRole::Agent)->whereNull('disabled_at')
             ->when($wardId, fn ($query) => $query->where('ward_id', $wardId))
             ->when($lgaId, fn ($query) => $query->where('lga_id', $lgaId))
@@ -117,6 +123,11 @@ class Points
      * @return Collection<int, array{id: int, name: string, detail: string, rank: int, points: int, agents: int}>
      */
     public function areas(string $level, ?Carbon $since = null, ?int $lgaId = null): Collection
+    {
+        return Aggregates::remember('points.areas', null, [$level, $since?->toIso8601String(), $lgaId], fn () => $this->computeAreas($level, $since, $lgaId));
+    }
+
+    private function computeAreas(string $level, ?Carbon $since, ?int $lgaId): Collection
     {
         $column = $level === 'lga' ? 'lga_id' : 'ward_id';
         $agents = User::query()->where('role', UserRole::Agent)->whereNull('disabled_at')->whereNotNull($column)

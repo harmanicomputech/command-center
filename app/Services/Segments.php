@@ -6,6 +6,7 @@ use App\Models\Lga;
 use App\Models\User;
 use App\Models\Voter;
 use App\Models\Ward;
+use App\Support\Aggregates;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -65,6 +66,15 @@ class Segments
      * @return array{count: int, with_phone: int, breakdowns: array<string, array<string, int>>, lgas: array<string, int>}
      */
     public function describe(User $viewer, array $filters): array
+    {
+        return Aggregates::remember('segments.describe', $viewer, $filters, fn () => $this->computeDescribe($viewer, $filters));
+    }
+
+    /**
+     * @param  array<string, list<string|int>>  $filters
+     * @return array{count: int, with_phone: int, breakdowns: array<string, array<string, int>>, lgas: array<string, int>}
+     */
+    private function computeDescribe(User $viewer, array $filters): array
     {
         $query = $this->query($viewer, $filters);
         $breakdowns = [];

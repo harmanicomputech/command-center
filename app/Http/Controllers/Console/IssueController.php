@@ -11,6 +11,7 @@ use App\Support\Time;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -98,8 +99,14 @@ class IssueController extends Controller
     private function weekly(Builder $query): array
     {
         $start = Time::now()->startOfWeek()->subWeeks(7);
-        $weeks = $query->where('reported_at', '>=', $start->copy()->utc())->pluck('reported_at')
-            ->countBy(fn ($at) => $at->copy()->setTimezone(Time::zone())->startOfWeek()->format('Y-m-d'));
+        $day = Time::sqlLocalDate('issues.reported_at');
+        $weeks = $query->where('reported_at', '>=', $start->copy()->utc())->selectRaw("{$day} as d, count(*) as n")->groupByRaw($day)->pluck('n', 'd')
+            ->reduce(function ($weeks, $n, $date) {
+                $week = Carbon::parse($date)->startOfWeek()->format('Y-m-d');
+                $weeks[$week] = ($weeks[$week] ?? 0) + (int) $n;
+
+                return $weeks;
+            }, []);
 
         return collect(range(0, 7))->map(fn ($i) => (int) ($weeks[$start->copy()->addWeeks($i)->format('Y-m-d')] ?? 0))->all();
     }

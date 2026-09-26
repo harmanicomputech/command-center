@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
@@ -64,5 +65,21 @@ class Time
         $election = Carbon::parse((string) config('campaign.election_date'), self::zone())->startOfDay();
 
         return (int) self::now()->startOfDay()->diffInDays($election, false);
+    }
+
+    /**
+     * SQL for a UTC datetime column's local (Lagos) date, for grouping by
+     * day in the database instead of loading every row. Lagos has no
+     * daylight saving, so a fixed offset is exact.
+     */
+    public static function sqlLocalDate(string $column): string
+    {
+        $offset = self::now()->getOffset();
+
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "date({$column}, '{$offset} seconds')",
+            'pgsql' => "date({$column} + interval '{$offset} seconds')",
+            default => "date(date_add({$column}, interval {$offset} second))",
+        };
     }
 }

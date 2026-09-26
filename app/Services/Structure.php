@@ -10,6 +10,7 @@ use App\Models\TaskReport;
 use App\Models\User;
 use App\Models\Voter;
 use App\Models\Ward;
+use App\Support\Aggregates;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -103,6 +104,11 @@ class Structure
      * @return Collection<int, array{ward: Ward, coordinators: int, agents: int, active: int, last_meeting: ?Carbon, last_activity: ?Carbon, red: bool, reasons: list<string>}>
      */
     public function wardHealth(User $viewer, ?int $lgaId = null): Collection
+    {
+        return Aggregates::remember('structure.health', $viewer, [$lgaId], fn () => $this->computeWardHealth($viewer, $lgaId));
+    }
+
+    private function computeWardHealth(User $viewer, ?int $lgaId): Collection
     {
         $wards = Ward::query()->visibleTo($viewer)->with('lga')
             ->when($lgaId, fn ($query) => $query->where('lga_id', $lgaId))

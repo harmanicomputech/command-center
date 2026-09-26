@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Issue;
 use App\Models\User;
 use App\Models\Voter;
+use App\Support\Aggregates;
 use Illuminate\Support\Collection;
 
 /**
@@ -22,6 +23,11 @@ class MapLayers
      * @return array{lga: array<string, mixed>, ward: ?array<string, mixed>}
      */
     public function build(User $viewer): array
+    {
+        return Aggregates::remember('map.layers', $viewer, [], fn () => $this->compute($viewer));
+    }
+
+    private function compute(User $viewer): array
     {
         $lgaRows = $this->intel->lgas()->keyBy('name');
         $counts = fn (string $column, $query) => $query->selectRaw("{$column} as area, count(*) as n")->groupBy($column)->pluck('n', 'area');

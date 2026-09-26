@@ -31,6 +31,7 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="ADMIN_PASSWORD" value="setup-key"/>
         <env name="BACKGROUND_RUNNER" value="false"/>
+        <env name="AGGREGATE_CACHE_SECONDS" value="0"/>
         <env name="APP_NAME" value="Command Center"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

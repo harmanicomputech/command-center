@@ -41,4 +41,7 @@ return [
     // work offline for days.
     'remember_days' => (int) env('CAMPAIGN_REMEMBER_DAYS', 30),
 
+    // Heavy aggregates (zones, segments, leaderboards) are cached this long.
+    'aggregate_cache_seconds' => (int) env('AGGREGATE_CACHE_SECONDS', 300),
+
 ];

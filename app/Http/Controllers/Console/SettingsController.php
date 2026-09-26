@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Console;
 
 use App\Http\Controllers\Controller;
+use App\Support\Aggregates;
 use App\Support\Audit;
 use App\Support\Settings;
 use App\Support\SettingsRegistry;
@@ -23,6 +24,9 @@ class SettingsController extends Controller
 
     public function update(Request $request, string $group): RedirectResponse
     {
+        // Zones, points and targets may change: recompute cached figures.
+        Aggregates::flush();
+
         $definition = SettingsRegistry::groups()[$group] ?? abort(404);
         $rules = [];
 

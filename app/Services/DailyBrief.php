@@ -7,6 +7,7 @@ use App\Models\PastResult;
 use App\Models\TaskReport;
 use App\Models\User;
 use App\Models\Voter;
+use App\Support\Aggregates;
 use App\Support\Settings;
 use App\Support\Time;
 use Illuminate\Support\Collection;
@@ -25,14 +26,22 @@ class DailyBrief
      */
     public function build(User $viewer): array
     {
+        return Aggregates::remember('brief', $viewer, [], fn () => $this->compute($viewer));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function compute(User $viewer): array
+    {
         $wards = $this->intel->wards($viewer);
         $today = Time::now()->startOfDay()->utc();
         $weekStart = Points::weekStart();
         $voters = Voter::query()->counted()->inAreaOf($viewer);
         $thisWeek = (clone $voters)->where('captured_at', '>=', $weekStart)->count();
         $lastWeek = (clone $voters)->whereBetween('captured_at', [$weekStart->copy()->subWeek(), $weekStart])->count();
-        $daily = (clone $voters)->where('captured_at', '>=', now()->subDays(14))->pluck('captured_at')
-            ->countBy(fn ($at) => $at->copy()->setTimezone(Time::zone())->format('Y-m-d'));
+        $day = Time::sqlLocalDate('voters.captured_at');
+        $daily = (clone $voters)->where('captured_at', '>=', now()->subDays(14))->selectRaw("{$day} as d, count(*) as n")->groupByRaw($day)->pluck('n', 'd');
         $health = $this->structure->wardHealth($viewer);
 
         return [
