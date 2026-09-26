@@ -15,7 +15,7 @@
 @php($tag = $href ? 'a' : 'div')
 <{{ $tag }} @if ($href) href="{{ $href }}" @endif {{ $attributes->merge(['class' => 'card flex min-w-0 flex-col gap-3 p-5'.($href ? ' card-interactive' : '')]) }}>
     <div class="flex items-center justify-between gap-2">
-        <p class="truncate text-sm font-medium text-muted">{{ $label }}</p>
+        <p class="line-clamp-2 text-sm font-medium text-muted">{{ $label }}</p>
         @if ($icon)<span class="grid size-8 flex-none place-items-center rounded-lg bg-surface-2 text-muted"><x-icon :name="$icon" size="17" /></span>@endif
     </div>
     <div class="flex items-end justify-between gap-3">

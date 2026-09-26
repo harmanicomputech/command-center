@@ -6,8 +6,12 @@ use App\Http\Controllers\Console\AreaController;
 use App\Http\Controllers\Console\AuditController;
 use App\Http\Controllers\Console\AuthController;
 use App\Http\Controllers\Console\DashboardController;
+use App\Http\Controllers\Console\EventController;
+use App\Http\Controllers\Console\InfluencerController;
+use App\Http\Controllers\Console\PeopleController;
 use App\Http\Controllers\Console\SearchController;
 use App\Http\Controllers\Console\SettingsController;
+use App\Http\Controllers\Console\StructureController;
 use App\Http\Controllers\Console\SystemController;
 use App\Http\Controllers\Console\TeamController;
 use App\Http\Controllers\Console\UserController;
@@ -61,6 +65,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/areas', [AreaController::class, 'index'])->name('areas');
         Route::get('/areas/{lga}', [AreaController::class, 'lga'])->name('areas.lga');
         Route::get('/areas/{lga}/{ward}', [AreaController::class, 'ward'])->name('areas.ward');
+
+        Route::get('/people', [PeopleController::class, 'index'])->name('people');
+        Route::get('/people/{person}', [PeopleController::class, 'show'])->name('people.show');
+        Route::get('/structure', [StructureController::class, 'index'])->name('structure');
+        Route::get('/influence', [InfluencerController::class, 'index'])->name('influencers');
+        Route::post('/influence', [InfluencerController::class, 'store'])->name('influencers.store');
+        Route::put('/influence/{influencer}', [InfluencerController::class, 'update'])->name('influencers.update');
+        Route::delete('/influence/{influencer}', [InfluencerController::class, 'destroy'])->name('influencers.destroy');
+        Route::get('/events', [EventController::class, 'index'])->name('events');
+        Route::post('/events', [EventController::class, 'store'])->name('events.store');
+        Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
+        Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
+        Route::post('/events/{event}/record', [EventController::class, 'record'])->name('events.record');
+        Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
 
         Route::get('/voters', [VoterController::class, 'index'])->name('voters');
         Route::post('/voters/{voter}/verify', [VoterController::class, 'verify'])->name('voters.verify');

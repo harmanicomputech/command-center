@@ -4,10 +4,14 @@ namespace App\Http\Controllers\Console;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\Event;
+use App\Models\Influencer;
 use App\Models\Lga;
 use App\Models\User;
+use App\Models\Voter;
 use App\Models\Ward;
 use App\Services\LgaMap;
+use App\Services\Structure;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -58,16 +62,23 @@ class AreaController extends Controller
         ]);
     }
 
-    public function ward(Request $request, Lga $lga, string $ward): View
+    public function ward(Request $request, Lga $lga, string $ward, Structure $structure): View
     {
         $ward = Ward::query()->where('lga_id', $lga->id)->where('slug', $ward)->firstOrFail();
         abort_unless($request->user()->canSeeWard($ward), 403, 'This ward is outside your area.');
+        $team = User::query()->where('ward_id', $ward->id)->whereNull('disabled_at')->orderByRaw("case role when 'ward_coordinator' then 0 else 1 end")->orderBy('name')->get();
 
         return view('areas.ward', [
             'lga' => $lga,
             'ward' => $ward,
             'units' => $ward->pollingUnits()->get(),
-            'team' => User::query()->where('ward_id', $ward->id)->orderByRaw("case role when 'ward_coordinator' then 0 else 1 end")->orderBy('name')->get(),
+            'team' => $team,
+            'engagement' => $structure->engagement($team),
+            'health' => $structure->wardHealth($request->user(), $lga->id)->firstWhere(fn ($row) => $row['ward']->id === $ward->id),
+            'influencers' => Influencer::query()->where('ward_id', $ward->id)->orderBy('name')->get(),
+            'events' => Event::query()->where('ward_id', $ward->id)->where('starts_at', '>=', now()->subDays(30))->orderBy('starts_at')->limit(6)->get(),
+            'registrations' => Voter::query()->counted()->where('ward_id', $ward->id)->count(),
+            'wardOptions' => [$ward->id => $ward->fullName()],
         ]);
     }
 

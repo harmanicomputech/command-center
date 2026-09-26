@@ -34,10 +34,12 @@ class Navigation
                 ['Map & wards', 'areas', 'map', ['areas', 'areas.*'], null],
                 ['Segments', 'segments', 'chart-pie', ['segments', 'segments.*'], $leaders],
                 ['Surveys', 'surveys', 'clipboard-list', ['surveys', 'surveys.*'], $leaders],
+                ['Influence', 'influencers', 'landmark', ['influencers'], null],
                 ['Past results', 'results', 'vote', ['results', 'results.*'], $analysts],
             ],
             'Field' => [
                 ['People', 'people', 'users', ['people', 'people.*'], null],
+                ['Structure health', 'structure', 'heart-pulse', ['structure'], null],
                 ['Team & invites', 'team', 'user-plus', ['team'], [UserRole::Admin, UserRole::LgaLeader, UserRole::WardCoordinator]],
                 ['Registrations', 'voters', 'user-round-check', ['voters', 'voters.*'], null],
                 ['Tasks', 'tasks', 'list-todo', ['tasks', 'tasks.*'], null],

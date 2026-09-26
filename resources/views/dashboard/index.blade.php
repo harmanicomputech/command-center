@@ -8,18 +8,27 @@
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-kpi class="rise" style="--i: 0" label="Registered voters" :value="$registered" icon="vote" :hint="'In '.$wardCount.' wards (register)'" />
-        <x-kpi class="rise" style="--i: 1" label="Voters canvassed" :value="0" icon="user-round-check" :hint="'Target '.number_format($target)" />
+        <x-kpi class="rise" style="--i: 1" label="Voters canvassed" :value="$canvassed" icon="user-round-check" :delta="$canvassedDelta" :spark="$canvassedSpark" :hint="$canvassedToday.' today · target '.number_format($target)" :href="route('voters')" />
         <x-kpi class="rise" style="--i: 2" label="Field agents" :value="$agents" icon="users" :hint="$activeAgents.' active in 14 days'" />
         <x-kpi class="rise" style="--i: 3" label="Coordinated wards" :value="$coordinatorCoverage" suffix="%" icon="shield-check" :hint="$wardsWithCoordinator.' of '.$wardCount.' wards have a coordinator'" />
     </div>
 
     <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <x-card class="lg:col-span-2" title="Field activity" description="Registrations, tasks and issues from the Field Force app." icon="activity">
-            <x-empty icon="smartphone" title="No field activity yet" description="When agents start registering voters on their phones, today’s numbers, the week’s trend and the map appear here.">
-                @if (Route::has('users'))
-                    <x-button :href="route('users')" icon="user-plus" variant="secondary">Invite your team</x-button>
-                @endif
-            </x-empty>
+        <x-card class="lg:col-span-2" title="Wards needing attention" description="No coordinator, or nothing registered or held for {{ config('structure.quiet_ward_days') }} days." icon="heart-pulse">
+            <x-slot:actions><x-button :href="route('structure')" variant="ghost" size="sm" icon-right="arrow-right">All wards</x-button></x-slot:actions>
+            @if ($redWards->isEmpty())
+                <x-empty icon="shield-check" title="Every ward is covered and active" description="Keep it that way: the list updates as the field reports in." compact />
+            @else
+                <p class="mb-3 text-sm"><span class="num text-2xl font-bold text-bad">{{ $redWards->count() }}</span> <span class="text-muted">of {{ $wardCount }} wards are red</span></p>
+                <ul class="divide-y divide-line">
+                    @foreach ($redWards->take(6) as $row)
+                        <li class="flex items-center justify-between gap-3 py-2.5 text-sm">
+                            <a href="{{ route('areas.ward', [$row['ward']->lga, $row['ward']->slug]) }}" class="min-w-0 truncate font-medium hover:text-brand-fg">{{ $row['ward']->name }} <span class="text-subtle">· {{ $row['ward']->lga->name }}</span></a>
+                            <span class="flex-none text-xs font-medium text-bad">{{ implode(' · ', $row['reasons']) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
         </x-card>
 
         @if ($setup)
