@@ -44,6 +44,16 @@ class SettingsRegistry
                     'privacy.dpo' => ['label' => 'Data protection officer', 'type' => 'text', 'default' => '', 'help' => 'A name and a way to reach them, e.g. an office phone or a generic email.'],
                 ],
             ],
+            'messaging' => [
+                'title' => 'Messaging and AI',
+                'description' => 'Placeholders until the campaign decides. The API keys are on the System page.',
+                'fields' => [
+                    'ai.monthly_budget' => ['label' => 'AI budget per month', 'type' => 'int', 'default' => '50', 'min' => 0, 'max' => 100000, 'suffix' => 'US$', 'help' => 'Drafting stops for the month once the logged cost reaches this. 0 means no limit.'],
+                    'sms.cost_per_part' => ['label' => 'SMS cost per message part', 'type' => 'text', 'default' => '4.00', 'help' => 'In naira, for the cost preview before a broadcast. Check the Africa’s Talking price for your sender ID.'],
+                    'sms.footer' => ['label' => 'Opt-out line added to every SMS', 'type' => 'text', 'default' => 'Reply STOP to opt out', 'help' => 'Keep it short: it counts towards the 160 characters.'],
+                    'news.keywords' => ['label' => 'News alert keywords', 'type' => 'text', 'default' => 'Ebonyi, governorship, Abakaliki', 'help' => 'Comma-separated: opponents’ names, issues, places. The candidate’s name is always included.'],
+                ],
+            ],
             'targets' => [
                 'title' => 'Registration targets',
                 'description' => 'Placeholders until the campaign sets real targets. Progress rings and the dashboard use them.',

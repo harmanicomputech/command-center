@@ -28,7 +28,7 @@ class SegmentController extends Controller
             'result' => $segments->describe($request->user(), $filters),
             'lgas' => Lga::query()->visibleTo($request->user())->orderBy('name')->get(),
             'saved' => Segment::query()->with('author')->latest()->limit(20)->get(),
-            'canMessage' => Route::has('messages.create'),
+            'canMessage' => Route::has('messages.create') && in_array($request->user()->role->value, ['admin', 'strategist'], true),
         ]);
     }
 

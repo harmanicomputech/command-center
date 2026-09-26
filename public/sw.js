@@ -27,7 +27,7 @@ const SHELL_FILES = [
 ];
 // Pages safe to keep offline: no voter or staff phone numbers on any of them.
 // (The field outbox page lists only this phone's own queue, from IndexedDB.)
-const DATA_PAGES = [/^\/$/, /^\/field(\/(register|tasks|tasks\/\d+|issues|me|outbox|leaderboard|surveys|surveys\/\d+))?$/, /^\/areas(\/[^/]+){0,2}$/, /^\/brief$/];
+const DATA_PAGES = [/^\/$/, /^\/field(\/(register|tasks|tasks\/\d+|issues|narratives|me|outbox|leaderboard|surveys|surveys\/\d+))?$/, /^\/areas(\/[^/]+){0,2}$/, /^\/brief$/];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {

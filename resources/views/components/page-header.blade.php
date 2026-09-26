@@ -9,6 +9,6 @@
         @if ($description)<p class="mt-1.5 max-w-2xl text-sm text-muted sm:text-base">{{ $description }}</p>@endif
     </div>
     @isset($actions)
-        <div class="flex flex-wrap items-center gap-2">{{ $actions }}</div>
+        <div class="flex flex-wrap items-center gap-2 md:flex-none md:justify-end">{{ $actions }}</div>
     @endisset
 </div>

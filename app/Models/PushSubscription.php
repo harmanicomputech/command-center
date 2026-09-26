@@ -14,6 +14,7 @@ class PushSubscription extends Model
         'ward_quiet' => 'A ward in my area went quiet',
         'security' => 'A security issue was reported in my area',
         'narrative' => 'A narrative is spiking',
+        'news' => 'A news story mentions our keywords',
     ];
 
     protected $fillable = ['user_id', 'endpoint', 'endpoint_hash', 'public_key', 'auth_token', 'content_encoding', 'topics', 'device'];

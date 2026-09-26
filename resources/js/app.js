@@ -8,6 +8,7 @@ import { registerOutbox } from './outbox';
 import { registerPhotoField } from './photos';
 import { registerFieldForms } from './field-forms';
 import { registerPush } from './push';
+import { registerEngage } from './engage';
 
 Alpine.plugin(focus);
 registerTheme(Alpine);
@@ -18,6 +19,7 @@ registerOutbox(Alpine);
 registerPhotoField(Alpine);
 registerFieldForms(Alpine);
 registerPush(Alpine);
+registerEngage(Alpine);
 
 window.Alpine = Alpine;
 Alpine.start();

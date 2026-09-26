@@ -5,12 +5,19 @@ use App\Http\Controllers\Console\AccountController;
 use App\Http\Controllers\Console\AreaController;
 use App\Http\Controllers\Console\AuditController;
 use App\Http\Controllers\Console\AuthController;
+use App\Http\Controllers\Console\BroadcastController;
+use App\Http\Controllers\Console\ComplaintsController;
 use App\Http\Controllers\Console\DashboardController;
 use App\Http\Controllers\Console\EventController;
 use App\Http\Controllers\Console\InfluencerController;
 use App\Http\Controllers\Console\IssueController;
 use App\Http\Controllers\Console\LeaderboardController;
+use App\Http\Controllers\Console\MessageController;
+use App\Http\Controllers\Console\NarrativeController;
+use App\Http\Controllers\Console\NewsController;
+use App\Http\Controllers\Console\PagePostController;
 use App\Http\Controllers\Console\PeopleController;
+use App\Http\Controllers\Console\PolicyController;
 use App\Http\Controllers\Console\PresetController;
 use App\Http\Controllers\Console\ResultsController;
 use App\Http\Controllers\Console\SearchController;
@@ -30,6 +37,7 @@ use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RunnerController;
+use App\Http\Controllers\SmsCallbackController;
 use App\Http\Controllers\SurveyPollController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +53,10 @@ Route::get('/s/{token}', [PublicSurveyController::class, 'show'])->middleware('t
 Route::post('/s/{token}', [PublicSurveyController::class, 'store'])->middleware('throttle:10,1')->name('survey.public.store');
 Route::post('/api/poll/ussd/{token}', [SurveyPollController::class, 'ussd'])->middleware('throttle:300,1')->name('poll.ussd');
 Route::post('/api/poll/sms/{token}', [SurveyPollController::class, 'sms'])->middleware('throttle:300,1')->name('poll.sms');
+// Africa's Talking SMS callbacks: delivery reports and STOP opt-outs.
+Route::post('/api/sms/delivery/{token}', [SmsCallbackController::class, 'delivery'])->middleware('throttle:600,1')->name('sms.delivery');
+Route::post('/api/sms/opt-out/{token}', [SmsCallbackController::class, 'optOut'])->middleware('throttle:300,1')->name('sms.opt-out');
+Route::post('/api/sms/inbox/{token}', [SmsCallbackController::class, 'inbox'])->middleware('throttle:300,1')->name('sms.inbox');
 
 Route::get('/invite/{token}', [InviteController::class, 'show'])->middleware('throttle:30,1')->name('invite');
 Route::post('/invite/{token}', [InviteController::class, 'accept'])->middleware('throttle:10,1')->name('invite.accept');
@@ -68,6 +80,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/leaderboard', [FieldController::class, 'leaderboard'])->name('leaderboard');
         Route::get('/surveys', [FieldController::class, 'surveys'])->name('surveys');
         Route::get('/surveys/{survey}', [FieldController::class, 'survey'])->name('survey');
+        Route::get('/narratives', [FieldController::class, 'narratives'])->name('narratives');
     });
 
     // The Field Force outbox (session auth; the token route gives a fresh CSRF token).
@@ -111,6 +124,57 @@ Route::middleware('auth')->group(function () {
             Route::delete('/results/{year}', [ResultsController::class, 'destroy'])->whereNumber('year')->name('results.destroy');
             Route::get('/presets', [PresetController::class, 'index'])->name('presets');
             Route::put('/presets', [PresetController::class, 'update'])->name('presets.update');
+        });
+
+        // Engage: AI messaging, broadcasts, narratives, news and our own pages.
+        Route::middleware('role:admin,strategist')->group(function () {
+            Route::get('/messages', [MessageController::class, 'index'])->name('messages');
+            Route::get('/messages/new', [MessageController::class, 'create'])->name('messages.create');
+            Route::post('/messages', [MessageController::class, 'store'])->middleware('throttle:20,1')->name('messages.store');
+            Route::get('/messages/{draft}', [MessageController::class, 'show'])->name('messages.show');
+            Route::get('/messages/{draft}/status', [MessageController::class, 'status'])->name('messages.status');
+            Route::post('/messages/{draft}/approve', [MessageController::class, 'approve'])->name('messages.approve');
+            Route::post('/messages/{draft}/reject', [MessageController::class, 'reject'])->name('messages.reject');
+            Route::post('/messages/{draft}/again', [MessageController::class, 'again'])->middleware('throttle:20,1')->name('messages.again');
+            Route::get('/policies', [PolicyController::class, 'index'])->name('policies');
+            Route::post('/policies', [PolicyController::class, 'store'])->name('policies.store');
+            Route::put('/policies/{policy}', [PolicyController::class, 'update'])->name('policies.update');
+            Route::delete('/policies/{policy}', [PolicyController::class, 'destroy'])->name('policies.destroy');
+
+            Route::get('/broadcasts', [BroadcastController::class, 'index'])->name('broadcasts');
+            Route::get('/broadcasts/new', [BroadcastController::class, 'create'])->name('broadcasts.create');
+            Route::post('/broadcasts/preview', [BroadcastController::class, 'preview'])->name('broadcasts.preview');
+            Route::post('/broadcasts', [BroadcastController::class, 'store'])->name('broadcasts.store');
+            Route::get('/broadcasts/{broadcast}', [BroadcastController::class, 'show'])->name('broadcasts.show');
+            Route::post('/broadcasts/{broadcast}/send', [BroadcastController::class, 'send'])->middleware('throttle:5,1')->name('broadcasts.send');
+            Route::delete('/broadcasts/{broadcast}', [BroadcastController::class, 'destroy'])->name('broadcasts.destroy');
+
+            Route::get('/news', [NewsController::class, 'index'])->name('news');
+            Route::post('/news/feeds', [NewsController::class, 'storeFeed'])->name('news.feeds.store');
+            Route::post('/news/feeds/{feed}/toggle', [NewsController::class, 'toggleFeed'])->name('news.feeds.toggle');
+            Route::delete('/news/feeds/{feed}', [NewsController::class, 'destroyFeed'])->name('news.feeds.destroy');
+            Route::post('/news/fetch', [NewsController::class, 'fetch'])->middleware('throttle:6,1')->name('news.fetch');
+            Route::post('/news/{item}/star', [NewsController::class, 'star'])->name('news.star');
+
+            Route::get('/posts', [PagePostController::class, 'index'])->name('posts');
+            Route::post('/posts', [PagePostController::class, 'store'])->name('posts.store');
+            Route::post('/posts/import', [PagePostController::class, 'import'])->name('posts.import');
+            Route::put('/posts/{post}', [PagePostController::class, 'update'])->name('posts.update');
+            Route::delete('/posts/{post}', [PagePostController::class, 'destroy'])->name('posts.destroy');
+        });
+
+        Route::middleware('role:admin,strategist,lga_leader')->group(function () {
+            Route::get('/narratives', [NarrativeController::class, 'index'])->name('narratives');
+            Route::post('/narratives/reports', [NarrativeController::class, 'storeReport'])->name('narratives.reports.store');
+            Route::post('/narratives/group', [NarrativeController::class, 'group'])->name('narratives.group');
+            Route::post('/narratives/suggest', [NarrativeController::class, 'suggest'])->middleware('throttle:6,1')->name('narratives.suggest');
+            Route::get('/narratives/suggest', [NarrativeController::class, 'suggestStatus'])->name('narratives.suggest.status');
+            Route::delete('/narratives/suggest', [NarrativeController::class, 'dismiss'])->name('narratives.suggest.dismiss');
+            Route::post('/narratives/reports/{report}/ungroup', [NarrativeController::class, 'ungroup'])->name('narratives.reports.ungroup');
+            Route::post('/narratives/reports/{report}/photo', [PhotoController::class, 'storeForNarrativeReport'])->name('narratives.reports.photo');
+            Route::get('/narratives/{narrative}', [NarrativeController::class, 'show'])->name('narratives.show');
+            Route::put('/narratives/{narrative}', [NarrativeController::class, 'update'])->name('narratives.update');
+            Route::get('/complaints', [ComplaintsController::class, 'index'])->name('complaints');
         });
 
         Route::get('/areas', [AreaController::class, 'index'])->name('areas');
@@ -171,6 +235,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/system', [SystemController::class, 'show'])->name('system');
             Route::post('/system/migrate', [SystemController::class, 'migrate'])->name('system.migrate');
             Route::post('/system/push-keys', [SystemController::class, 'pushKeys'])->name('system.push-keys');
+            Route::post('/system/secrets', [SystemController::class, 'secrets'])->name('system.secrets');
             Route::post('/system/ward-map', [SystemController::class, 'wardMap'])->name('system.ward-map');
             Route::post('/system/register', [SystemController::class, 'importRegister'])->name('system.register');
             Route::post('/system/register/confirm', [SystemController::class, 'confirmRegister'])->name('system.register.confirm');

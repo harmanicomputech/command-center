@@ -92,4 +92,46 @@ export function registerUi(Alpine) {
             }
         },
     }));
+
+    // x-data="waitFor('/url')": polls a JSON {done} URL (background work
+    // such as an AI draft) and reloads the page once it's done. Each poll
+    // also gives the background runner a chance to run.
+    Alpine.data('waitFor', (url, every = 3000) => ({
+        seconds: 0,
+        init() {
+            const started = Date.now();
+            const tick = async () => {
+                this.seconds = Math.round((Date.now() - started) / 1000);
+                try {
+                    const response = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+                    if (response.ok && (await response.json()).done) {
+                        window.location.reload();
+                        return;
+                    }
+                } catch {
+                    // Offline or a blip: keep waiting.
+                }
+                this.timer = setTimeout(tick, every);
+            };
+            this.timer = setTimeout(tick, every);
+            this.clock = setInterval(() => (this.seconds = Math.round((Date.now() - started) / 1000)), 1000);
+        },
+        destroy() {
+            clearTimeout(this.timer);
+            clearInterval(this.clock);
+        },
+    }));
+
+    // SMS length like the server's SmsText: GSM text fits 160 (153 a part
+    // when split); any other character (Igbo ị, ọ, ụ, emoji) makes the
+    // whole message Unicode: 70 (67 a part).
+    const GSM = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
+    const GSM_EXTENDED = '^{}\\[~]|€';
+    window.cc.sms = (text) => {
+        const chars = Array.from(text || '');
+        const unicode = chars.some((c) => !GSM.includes(c) && !GSM_EXTENDED.includes(c));
+        const length = unicode ? chars.length : chars.reduce((n, c) => n + (GSM_EXTENDED.includes(c) ? 2 : 1), 0);
+        const [single, multi] = unicode ? [70, 67] : [160, 153];
+        return { length, unicode, parts: length === 0 ? 0 : length <= single ? 1 : Math.ceil(length / multi) };
+    };
 }

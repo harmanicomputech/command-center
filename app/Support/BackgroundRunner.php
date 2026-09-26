@@ -101,6 +101,10 @@ class BackgroundRunner
         return [
             // 7 AM Lagos: "Your daily brief is ready" and quiet wards.
             'daily-brief' => [self::dailyAt($now, '07:00'), fn () => Artisan::call('brief:notify')],
+            // 6:30 AM Lagos: the AI "what to push next" suggestion, ready for the brief.
+            'push-next' => [self::dailyAt($now, '06:30'), fn () => Artisan::call('ai:suggest')],
+            // RSS news tracker, with keyword alerts.
+            'news' => [self::everyMinutes($now, (int) config('messaging.news_every_minutes')), fn () => Artisan::call('news:fetch')],
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\Issue;
+use App\Models\NarrativeReport;
 use App\Models\Photo;
 use App\Models\TaskReport;
 use App\Models\User;
@@ -24,6 +25,7 @@ class PhotoController extends Controller
     private const OWNERS = [
         'task_report' => [TaskReport::class, 'user_id'],
         'issue' => [Issue::class, 'reported_by'],
+        'narrative_report' => [NarrativeReport::class, 'reported_by'],
     ];
 
     public function upload(Request $request, PhotoStore $store): JsonResponse
@@ -76,6 +78,18 @@ class PhotoController extends Controller
         return back()->with('status', 'Photos added.');
     }
 
+    /**
+     * The media team attaches a screenshot to a narrative report.
+     */
+    public function storeForNarrativeReport(Request $request, NarrativeReport $report, PhotoStore $store)
+    {
+        abort_unless(NarrativeReport::query()->visibleTo($request->user())->whereKey($report->id)->exists(), 403);
+        $request->validate(['photo' => ['required', 'file', 'max:'.config('field.photo_max_kb')]]);
+        $store->store($request->file('photo'), $report, (string) Str::uuid(), $request->user());
+
+        return back()->with('status', 'Screenshot added.');
+    }
+
     private function canSee(User $user, Photo $photo): bool
     {
         $owner = $photo->owner;
@@ -84,6 +98,7 @@ class PhotoController extends Controller
             $owner instanceof TaskReport => $owner->user_id === $user->id || ($owner->task?->ward && ! $user->role->usesFieldApp() && $user->canSeeWard($owner->task->ward)),
             $owner instanceof Issue => Issue::query()->visibleTo($user)->whereKey($owner->id)->exists(),
             $owner instanceof Event => Event::query()->visibleTo($user)->whereKey($owner->id)->exists(),
+            $owner instanceof NarrativeReport => NarrativeReport::query()->visibleTo($user)->whereKey($owner->id)->exists(),
             default => false,
         };
     }

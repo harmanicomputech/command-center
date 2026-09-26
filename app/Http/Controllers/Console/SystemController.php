@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Console;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\SmsCallbackController;
+use App\Models\AiCall;
 use App\Models\AuditLog;
 use App\Models\PushSubscription;
 use App\Models\User;
@@ -12,6 +14,7 @@ use App\Services\RegisterStatus;
 use App\Services\WardMap;
 use App\Support\Audit;
 use App\Support\BackgroundRunner;
+use App\Support\Secrets;
 use App\Support\Settings;
 use App\Support\Time;
 use Illuminate\Http\RedirectResponse;
@@ -43,6 +46,23 @@ class SystemController extends Controller
             'pushConfigured' => $notifier->configured(),
             'pushDevices' => PushSubscription::query()->count(),
             'wardMap' => $wardMap->load(),
+            'secrets' => collect(Secrets::KEYS)->map(fn ($key, $name) => ['label' => $key[0], 'hint' => Secrets::hint($name), 'env' => Secrets::fromEnv($name)]),
+            'ai' => [
+                'month' => AiCall::monthSpend(),
+                'budget' => Settings::float('ai.monthly_budget'),
+                'calls' => AiCall::query()->where('created_at', '>=', now()->startOfMonth())->count(),
+                'failed' => AiCall::query()->where('created_at', '>=', now()->startOfMonth())->where('status', '!=', 'ok')->count(),
+                'cacheRead' => (int) AiCall::query()->where('created_at', '>=', now()->startOfMonth())->sum('cache_read_tokens'),
+                'input' => (int) AiCall::query()->where('created_at', '>=', now()->startOfMonth())->sum('input_tokens'),
+                'byPurpose' => AiCall::query()->where('created_at', '>=', now()->startOfMonth())->selectRaw('purpose, count(*) as n, sum(cost_usd) as cost')->groupBy('purpose')->get(),
+                'recent' => AiCall::query()->with('user')->latest('created_at')->limit(8)->get(),
+                'model' => config('messaging.ai.model'),
+            ],
+            'smsUrls' => [
+                'Delivery reports' => route('sms.delivery', SmsCallbackController::token()),
+                'Bulk SMS opt-out' => route('sms.opt-out', SmsCallbackController::token()),
+                'Incoming messages (STOP)' => route('sms.inbox', SmsCallbackController::token()),
+            ],
             'counts' => [
                 'Users' => User::query()->count(),
                 'Audit entries' => AuditLog::query()->count(),
@@ -68,6 +88,38 @@ class SystemController extends Controller
         Audit::record('system.push_keys', 'Set up notification (VAPID) keys');
 
         return back()->with('status', 'Notifications are set up. Each person turns them on under Notifications.');
+    }
+
+    /**
+     * API keys for Claude and Africa's Talking, stored encrypted. A blank
+     * field keeps the current value; "remove" clears it.
+     */
+    public function secrets(Request $request): RedirectResponse
+    {
+        $rules = collect(Secrets::KEYS)->mapWithKeys(fn ($key, $name) => [$name => ['nullable', 'string', 'max:300']])->all();
+        $data = $request->validate($rules + ['remove' => ['nullable', 'string']]);
+
+        if ($remove = $request->input('remove')) {
+            abort_unless(array_key_exists($remove, Secrets::KEYS), 422);
+            Secrets::set($remove, null);
+            Audit::record('system.secret', 'Removed the '.Secrets::KEYS[$remove][0]);
+
+            return back()->with('status', Secrets::KEYS[$remove][0].' removed.');
+        }
+
+        $changed = [];
+        foreach (Secrets::KEYS as $name => [$label]) {
+            if (filled($data[$name] ?? null)) {
+                Secrets::set($name, $data[$name]);
+                $changed[] = $label;
+            }
+        }
+
+        if ($changed) {
+            Audit::record('system.secret', 'Changed: '.implode(', ', $changed));
+        }
+
+        return back()->with('status', $changed ? 'Saved: '.implode(', ', $changed).'.' : 'Nothing changed.');
     }
 
     /**

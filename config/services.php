@@ -42,4 +42,16 @@ return [
         'subject' => env('VAPID_SUBJECT'),
     ],
 
+    // Africa's Talking bulk SMS. The key can also be set on the System page.
+    'africastalking' => [
+        'username' => env('AFRICASTALKING_USERNAME'),
+        'api_key' => env('AFRICASTALKING_API_KEY'),
+        'sender_id' => env('AFRICASTALKING_SENDER_ID'),
+    ],
+
+    // Claude (AI drafting). The key can also be set on the System page.
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+    ],
+
 ];

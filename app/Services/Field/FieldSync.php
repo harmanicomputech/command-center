@@ -22,6 +22,7 @@ class FieldSync
         'task_report' => ReportTask::class,
         'issue' => ReportIssue::class,
         'survey_response' => AnswerSurvey::class,
+        'narrative_report' => ReportNarrative::class,
     ];
 
     public const MAX_ITEMS = 50;

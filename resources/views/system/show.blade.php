@@ -82,6 +82,63 @@
         </x-card>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <x-card title="Connections" description="API keys for Claude (AI drafting) and Africa’s Talking (SMS). Stored encrypted; a value in .env takes priority." icon="key-round" id="connections">
+                <form method="post" action="{{ route('system.secrets') }}" class="space-y-4" autocomplete="off">
+                    @csrf
+                    @foreach ($secrets as $name => $secret)
+                        <div>
+                            <label for="secret-{{ $name }}" class="label flex items-center justify-between gap-2">
+                                <span>{{ $secret['label'] }}</span>
+                                @if ($secret['env'])<x-badge tone="info">From .env</x-badge>@elseif ($secret['hint'])<x-badge tone="good" icon="check">Set {{ $secret['hint'] }}</x-badge>@else<x-badge>Not set</x-badge>@endif
+                            </label>
+                            <div class="flex gap-2">
+                                <input id="secret-{{ $name }}" name="{{ $name }}" type="{{ str_contains($name, 'key') ? 'password' : 'text' }}" class="input min-w-0 flex-1" @disabled($secret['env']) placeholder="{{ $secret['hint'] ? 'Leave blank to keep' : '' }}" autocomplete="off">
+                                @if ($secret['hint'] && ! $secret['env'])
+                                    <button name="remove" value="{{ $name }}" class="btn btn-ghost btn-icon flex-none" aria-label="Remove {{ $secret['label'] }}" onclick="return confirm('Remove this key?')"><x-icon name="trash-2" /></button>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                    <x-button icon="check">Save keys</x-button>
+                </form>
+                <div class="mt-6 border-t border-line pt-4">
+                    <p class="label">Africa’s Talking callback URLs</p>
+                    <p class="hint mb-3">In the Africa’s Talking dashboard, paste these under SMS → Callback URLs. Keep them private.</p>
+                    @foreach ($smsUrls as $label => $url)
+                        <div class="mb-3 last:mb-0" x-data="copy(@js($url))">
+                            <p class="mb-1 text-xs text-muted">{{ $label }}</p>
+                            <div class="flex gap-2">
+                                <input type="text" readonly value="{{ $url }}" class="input num min-w-0 flex-1 text-xs" aria-label="{{ $label }} URL" x-on:focus="$el.select()">
+                                <button type="button" class="btn btn-secondary btn-icon flex-none" x-on:click="copy()" :aria-label="copied ? 'Copied' : 'Copy'"><x-icon name="copy" /></button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </x-card>
+            <x-card title="AI usage this month" description="Every Claude request is logged with its tokens and cost (US dollars)." icon="sparkles" id="ai">
+                <div class="grid grid-cols-3 gap-4">
+                    <x-stat label="Spent" :value="'$'.number_format($ai['month'], 2)" :hint="$ai['budget'] > 0 ? 'of $'.number_format($ai['budget']).' budget' : 'no limit'" />
+                    <x-stat label="Requests" :value="number_format($ai['calls'])" :hint="$ai['failed'] ? $ai['failed'].' failed' : null" />
+                    <x-stat label="From cache" :value="($ai['input'] + $ai['cacheRead']) > 0 ? round(100 * $ai['cacheRead'] / ($ai['input'] + $ai['cacheRead'])).'%' : '—'" hint="of input tokens" />
+                </div>
+                @if ($ai['budget'] > 0)<x-progress class="mt-4" :value="min($ai['month'], $ai['budget'])" :max="$ai['budget']" :tone="$ai['month'] >= $ai['budget'] * 0.8 ? 'warn' : 'brand'" label="Budget used" />@endif
+                @if ($ai['byPurpose']->isNotEmpty())
+                    <div class="mt-4 flex flex-wrap gap-1.5">
+                        @foreach ($ai['byPurpose'] as $row)<x-badge>{{ ucfirst($row->purpose) }}: {{ $row->n }} · ${{ number_format((float) $row->cost, 2) }}</x-badge>@endforeach
+                    </div>
+                @endif
+                @if ($ai['recent']->isNotEmpty())
+                    <div class="mt-4 divide-y divide-line border-t border-line">
+                        @foreach ($ai['recent'] as $call)
+                            <div class="flex items-center justify-between gap-3 py-2 text-sm">
+                                <span class="min-w-0 truncate"><span class="font-medium">{{ ucfirst($call->purpose) }}</span> <span class="text-subtle">· {{ $call->user?->name ?? 'Automatic' }} · {{ $call->created_at->diffForHumans() }}</span></span>
+                                @if ($call->status === 'ok')<span class="num flex-none text-muted">${{ number_format($call->cost_usd, 4) }}</span>@else<x-badge tone="bad">{{ $call->status }}</x-badge>@endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+                <p class="hint mt-3">Model: {{ $ai['model'] }}. Set the budget in Settings → Messaging and AI.</p>
+            </x-card>
             <x-card title="Notifications" description="Web Push to phones and computers: the 7 AM brief, new tasks, quiet wards, security issues." icon="bell" id="push">
                 @if ($pushConfigured)
                     <p class="flex items-center gap-2 text-sm font-medium text-good"><x-icon name="circle-check" size="18" /> Set up. {{ $pushDevices }} {{ \Illuminate\Support\Str::plural('device', $pushDevices) }} subscribed.</p>

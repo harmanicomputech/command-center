@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Issue;
+use App\Models\NarrativeReport;
 use App\Models\PollingUnit;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
@@ -130,6 +131,16 @@ class FieldController extends Controller
 
         return view('field.issues', [
             'mine' => Issue::query()->where('reported_by', $user->id)->with('photos')->latest('reported_at')->limit(10)->get(),
+            ...$this->wardChoices($user),
+        ]);
+    }
+
+    public function narratives(Request $request): View
+    {
+        $user = $request->user();
+
+        return view('field.narratives', [
+            'mine' => NarrativeReport::query()->where('reported_by', $user->id)->with('photos')->latest('seen_at')->limit(10)->get(),
             ...$this->wardChoices($user),
         ]);
     }

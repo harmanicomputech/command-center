@@ -52,6 +52,12 @@ On the System page, **Background work** shows **Running** and how it last ran.
 
 Under **Users**, add LGA leaders and ward coordinators (email and password) and field agents (phone number and a 4–6 digit PIN). Agents open the site on their phone, sign in, and install it: **Install the app** in Chrome on Android, or Share → **Add to Home Screen** in Safari on iPhone.
 
+## 7. Connect AI drafting and SMS (optional)
+
+- **System → Connections:** paste the Claude (Anthropic) API key, and the Africa's Talking username, API key and sender ID. They are stored encrypted; values in `.env` (`ANTHROPIC_API_KEY`, `AFRICASTALKING_*`) take priority.
+- In the Africa's Talking dashboard, set the three callback URLs shown under Connections (delivery reports, bulk-SMS opt-out, incoming messages), so delivery and STOP replies come back.
+- AI drafts run from the background work, so keep the pinger (step 5) running.
+
 ## Updating
 
 Upload `command-center-shared-hosting-update.zip` (it has no `.env`, so your settings are kept), extract it over the old files, then press **System → Update database**. Each build gives the service worker a new version, so phones pick up the release on their next visit.

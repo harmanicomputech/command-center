@@ -105,6 +105,50 @@ export function registerFieldForms(Alpine) {
         },
     }));
 
+    Alpine.data('narrativeForm', () => ({
+        photo() {
+            return photoOf(this.$root);
+        },
+        saved: false,
+        errors: {},
+        async submit(event) {
+            if (!box()) {
+                return;
+            }
+            event.preventDefault();
+            const payload = formPayload(this.$refs.form);
+            const photo = this.photo();
+            payload.seen_at = new Date().toISOString();
+
+            this.errors = {};
+            if (!payload.summary || payload.summary.trim().length < 5) this.errors.summary = ['Say in a sentence what people are saying.'];
+            if (!payload.source) this.errors.source = ['Choose where you heard or saw it.'];
+            if (!payload.tone) this.errors.tone = ['Choose good, neutral or bad.'];
+            if (!payload.topic) this.errors.topic = ['Choose what it is about.'];
+            if (payload.link && !/^https?:\/\//i.test(payload.link)) this.errors.link = ['Paste the full link, starting with https://'];
+            if (Object.keys(this.errors).length) {
+                this.$nextTick(() => this.$refs.form.querySelector('[data-error]:not([style*="none"])')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+                return;
+            }
+
+            const label = `Heard: ${payload.summary.trim().slice(0, 40)}${payload.summary.trim().length > 40 ? '…' : ''}`;
+            const item = await box().add('narrative_report', payload, label);
+            if (photo.blob) {
+                await box().addPhoto('narrative_report', item.id, photo.blob, `Screenshot: ${label}`);
+            }
+            Alpine.store('outbox').refresh();
+            this.saved = true;
+            photo.clear();
+            window.scrollTo({ top: 0 });
+            Alpine.store('outbox').sync();
+        },
+        another() {
+            this.$refs.form.reset();
+            this.saved = false;
+            this.errors = {};
+        },
+    }));
+
     Alpine.data('issueForm', () => ({
         photo() {
             return photoOf(this.$root);

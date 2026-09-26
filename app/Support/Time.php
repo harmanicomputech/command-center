@@ -10,14 +10,18 @@ use Throwable;
  */
 class Time
 {
-    public static function parse(mixed $value): ?Carbon
+    /**
+     * A time from input, in UTC. With $local, a time without a zone (from
+     * a form or a CSV) is read as Lagos time.
+     */
+    public static function parse(mixed $value, bool $local = false): ?Carbon
     {
         if (blank($value)) {
             return null;
         }
 
         try {
-            return Carbon::parse($value)->utc();
+            return Carbon::parse($value, $local ? self::zone() : null)->utc();
         } catch (Throwable) {
             return null;
         }

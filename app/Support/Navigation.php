@@ -51,7 +51,10 @@ class Navigation
                 ['Messages', 'messages', 'sparkles', ['messages', 'messages.*'], $analysts],
                 ['Broadcasts', 'broadcasts', 'megaphone', ['broadcasts', 'broadcasts.*'], $analysts],
                 ['Narratives', 'narratives', 'radio', ['narratives', 'narratives.*'], $leaders],
+                ['Complaints', 'complaints', 'message-square', ['complaints'], $leaders],
                 ['News', 'news', 'newspaper', ['news', 'news.*'], $analysts],
+                ['Our pages', 'posts', 'thumbs-up', ['posts'], $analysts],
+                ['Policy brief', 'policies', 'book-open', ['policies'], $analysts],
             ],
             'Admin' => [
                 ['Users', 'users', 'user-plus', ['users', 'users.*'], $admin],

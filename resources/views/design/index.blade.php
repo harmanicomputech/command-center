@@ -8,7 +8,7 @@
         'Diverging ramp' => ['div-strong' => 'Stronghold', 'div-lean' => 'Leaning', 'div-swing' => 'Swing', 'div-weakish' => 'Leaning away', 'div-weak' => 'Weak', 'div-unknown' => 'Unknown'],
     ];
     $sizes = [44 => 'Hero 44', 36 => 'Hero 36', 28 => 'Page title 28', 22 => 'Section 22', 18 => 'Lead 18', 16 => 'Body 16', 14 => 'UI 14', 12 => 'Caption 12'];
-    $sections = ['Colour', 'Type', 'Shape', 'Icons', 'Buttons', 'Forms', 'Feedback', 'Data', 'Field', 'Layout', 'Motion'];
+    $sections = ['Colour', 'Type', 'Shape', 'Icons', 'Buttons', 'Forms', 'Feedback', 'Data', 'Field', 'Engage', 'Layout', 'Motion'];
 @endphp
 <x-layouts.app title="Design system" wide>
     <x-page-header title="Design system" eyebrow="Admin · living style guide"
@@ -263,6 +263,34 @@
         </section>
 
         {{-- Layout --}}
+        <section id="engage" class="scroll-mt-32">
+            <h2 class="text-xl font-semibold tracking-tight">Engage patterns</h2>
+            <p class="mt-1 text-sm text-muted">The SMS preview bubble (with the live length and parts from <code>cc.sms()</code>), the AI suggestion label, and narrative tone and status badges. AI output is always labelled as a suggestion or draft.</p>
+            <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div class="card p-6" x-data="{ text: 'Town hall on Saturday, 10am. Reply STOP to opt out' }">
+                    <div class="rounded-2xl bg-surface-2 p-4">
+                        <div class="max-w-[260px] rounded-2xl rounded-bl-md bg-surface p-3 text-sm shadow-xs" x-text="text"></div>
+                    </div>
+                    <label for="demo-sms" class="label mt-4">Try Igbo letters (ị, ọ, ụ)</label>
+                    <input id="demo-sms" class="input" x-model="text">
+                    <p class="num mt-2 text-xs text-subtle"><span x-text="cc.sms(text).length"></span> characters · <span x-text="cc.sms(text).parts"></span> SMS<span x-show="cc.sms(text).unicode"> (Unicode)</span></p>
+                </div>
+                <div class="card space-y-5 p-6">
+                    <div class="rounded-xl border border-brand/30 bg-brand-softer p-4">
+                        <p class="mb-1 flex items-center gap-1.5 text-xs font-semibold text-brand-fg"><x-icon name="sparkles" size="14" />AI suggestion, not a decision</p>
+                        <p class="text-sm">An illustrative suggestion appears here each morning.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (config('messaging.narrative_tones') as $toneInfo)<x-badge :tone="$toneInfo['tone']">{{ $toneInfo['label'] }}</x-badge>@endforeach
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (config('messaging.narrative_statuses') as $statusInfo)<x-badge :tone="$statusInfo['tone']" dot>{{ $statusInfo['label'] }}</x-badge>@endforeach
+                        @foreach (\App\Models\MessageDraft::STATUSES as $statusInfo)<x-badge :tone="$statusInfo['tone']" dot>{{ $statusInfo['label'] }}</x-badge>@endforeach
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="layout" class="scroll-mt-32">
             <h2 class="text-xl font-semibold tracking-tight">Layout</h2>
             <p class="mt-1 text-sm text-muted">Command Center: sidebar (Overview, Intelligence, Field, Engage, Admin) from 1024px, a drawer on tablets, a bottom tab bar on phones, ⌘K palette everywhere. Field Force: bottom tabs with the central Register button, 48px targets, one column up to 576px.</p>

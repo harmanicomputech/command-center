@@ -4,8 +4,11 @@ namespace App\Providers;
 
 use App\Models\Event;
 use App\Models\Issue;
+use App\Models\NarrativeReport;
 use App\Models\TaskReport;
 use App\Models\User;
+use App\Services\Ai\AnthropicModel;
+use App\Services\Ai\LanguageModel;
 use App\Support\Settings;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -18,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->bind(LanguageModel::class, AnthropicModel::class);
     }
 
     public function boot(): void
@@ -26,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
         Relation::enforceMorphMap([
             'event' => Event::class,
             'issue' => Issue::class,
+            'narrative_report' => NarrativeReport::class,
             'task_report' => TaskReport::class,
             'user' => User::class,
         ]);
