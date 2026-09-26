@@ -98,6 +98,13 @@
         </header>
 
         <main id="main" @class(['mx-auto px-4 pt-6 pb-28 sm:px-6 md:pb-12 lg:px-8 lg:pt-8', 'max-w-[1440px]' => $wide, 'max-w-[1200px]' => ! $wide])>
+            @if (\App\Support\Settings::get('demo.loaded_at'))
+                <p class="mb-5 flex items-center gap-2 rounded-xl bg-accent-soft px-4 py-2.5 text-sm text-ink" role="note"><x-icon name="sparkles" size="16" class="flex-none text-accent-fg" /><span><strong>Demo data is loaded.</strong> Figures include fictional records.
+                    @if (auth()->user()->isAdmin())
+                        <a href="{{ route('system') }}#demo" class="font-medium underline">Remove it</a> before real use.
+                    @endif
+                </span></p>
+            @endif
             {{ $slot }}
         </main>
     </div>

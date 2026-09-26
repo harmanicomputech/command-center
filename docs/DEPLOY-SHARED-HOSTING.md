@@ -64,6 +64,10 @@ Under **Users**, add LGA leaders and ward coordinators (email and password) and 
 - **Delete-my-data requests** from the privacy page appear under **Data requests**: call the number to confirm it's them, then erase. An SMS reply "DELETE" erases at once (the number proves it).
 - **Retention:** voter personal data is erased automatically 90 days after the election (change or switch off in **Settings → Privacy**).
 
+## 9. Demo data (for presentations)
+
+**System → Demo data → Load demo data** fills every screen with fictional records (made-up names, 0800 numbers) and shows demo sign-ins for a leader, a coordinator and a field agent. Present from a private window as each role. **Remove demo data** before real work starts; it deletes only what it added.
+
 ## Updating
 
 Upload `command-center-shared-hosting-update.zip` (it has no `.env`, so your settings are kept), extract it over the old files, then press **System → Update database**. Each build gives the service worker a new version, so phones pick up the release on their next visit.

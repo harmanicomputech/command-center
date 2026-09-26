@@ -27,6 +27,11 @@ Every phase in the brief's build order is built, tested (94 automated tests) and
 | --- | --- | --- | --- |
 | 1 | First-admin setup failed on the host's MySQL: `1059 Identifier name 'broadcast_messages_broadcast_id_recipient_type_recipient_id_unique' is too long` | The index has a short explicit name. The migration now clears tables left by a failed earlier attempt (MySQL can't roll back table creation), so **re-running setup on the same database works**. A guard test fails on any name over 64 characters; the whole suite, the web setup from the zip and every page were run on MariaDB 10.11 (strict mode, like Laravel's MySQL connection); CI gains a MySQL job. | ✅ Fixed |
 
+## Since phase 8
+
+- **Volunteer intake:** a public `/join` page and an endpoint the campaign website's form handler forwards sign-ups to (URL and fields on **System → Campaign website sign-ups**); a **Volunteers** inbox scoped to each leader's area, where a volunteer becomes a field agent in one step.
+- **Demo data** for presentations: **System → Demo data → Load** adds fictional people and activity across all 13 LGAs (10,000 canvassed voters, a team of 104, issues, tasks, events, influencers, a live survey, narratives, volunteers, page posts, sample messages and a sent broadcast) in about 5 seconds; demo sign-ins (leader, coordinator, agent) are shown there to admins. **Remove** deletes exactly what it added. No election results are invented; zones come from canvassing and the survey. A banner shows on every page while it's loaded.
+
 ## What's left
 
 - **More feedback from the live test** (add it above).

@@ -11,6 +11,7 @@ use App\Models\DataRequest;
 use App\Models\PushSubscription;
 use App\Models\User;
 use App\Services\Backup;
+use App\Services\DemoData;
 use App\Services\Erasure;
 use App\Services\PollingUnitImporter;
 use App\Services\PushNotifier;
@@ -66,6 +67,8 @@ class SystemController extends Controller
             'retention' => Erasure::retentionDate(),
             'retentionDone' => Settings::get('privacy.retention_done_at'),
             'openRequests' => DataRequest::query()->where('status', 'pending')->count(),
+            'demo' => DemoData::logins(),
+            'demoLoaded' => DemoData::loaded(),
             'volunteerUrl' => route('volunteers.api', JoinController::token()),
             'smsUrls' => [
                 'Delivery reports' => route('sms.delivery', SmsCallbackController::token()),
@@ -97,6 +100,32 @@ class SystemController extends Controller
         Audit::record('system.push_keys', 'Set up notification (VAPID) keys');
 
         return back()->with('status', 'Notifications are set up. Each person turns them on under Notifications.');
+    }
+
+    /**
+     * Load fictional demo data for presentations (admin only, audited).
+     */
+    public function loadDemo(Request $request, DemoData $demo): RedirectResponse
+    {
+        try {
+            $result = $demo->load($request->user());
+        } catch (Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Demo data couldn’t be loaded: '.$e->getMessage());
+        }
+
+        return redirect(route('system').'#demo')->with('status', 'Demo data loaded: '.number_format(array_sum($result['counts'])).' records. The demo sign-ins are on this page.');
+    }
+
+    /**
+     * Remove exactly the rows the demo created.
+     */
+    public function removeDemo(DemoData $demo): RedirectResponse
+    {
+        $removed = $demo->remove();
+
+        return redirect(route('system').'#demo')->with('status', 'Demo data removed: '.number_format(array_sum($removed)).' records.');
     }
 
     /**

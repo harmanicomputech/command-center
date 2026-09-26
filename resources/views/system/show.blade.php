@@ -160,6 +160,34 @@
                     <x-button variant="secondary" size="sm" icon="upload">{{ $wardMap ? 'Replace' : 'Load' }} ward boundaries</x-button>
                 </form>
             </x-card>
+            <x-card title="Demo data" description="Fictional people and activity across all 13 LGAs, to show the app. Remove it before real work starts: it takes out exactly what it added." icon="sparkles" id="demo">
+                @if ($demoLoaded)
+                    <x-alert tone="warn" title="Demo data is loaded">Dashboards, maps and totals include it until you remove it.</x-alert>
+                    @if ($demo)
+                        <dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                            <div><dt class="text-subtle">LGA leader</dt><dd class="font-medium break-all">{{ $demo['leader'] }}</dd></div>
+                            <div><dt class="text-subtle">Ward coordinator</dt><dd class="font-medium break-all">{{ $demo['coordinator'] }}</dd></div>
+                            <div><dt class="text-subtle">Staff password</dt><dd class="num font-medium">{{ $demo['password'] }}</dd></div>
+                            <div><dt class="text-subtle">Field agent (phone + PIN)</dt><dd class="num font-medium">{{ $demo['agent'] }} · {{ $demo['pin'] }}</dd></div>
+                        </dl>
+                        <p class="hint">Use a private window to sign in as someone else. These accounts disappear when you remove the demo.</p>
+                    @endif
+                    <form method="post" action="{{ route('system.demo.remove') }}" class="mt-4" onsubmit="return confirm('Remove all demo data? Real records are kept.')">
+                        @csrf @method('delete')
+                        <x-button variant="secondary" icon="trash-2">Remove demo data</x-button>
+                    </form>
+                @else
+                    <ul class="list-disc space-y-1 pl-5 text-sm text-muted">
+                        <li>{{ number_format(\App\Services\DemoData::VOTERS) }} canvassed voters, a team of 104 (leaders, coordinators, agents)</li>
+                        <li>Issues, tasks, events, influencers, a live survey, narratives, volunteers, page posts, sample messages and a sent broadcast</li>
+                        <li>Made-up names and 0800 numbers; no election results (zones come from canvassing and the survey)</li>
+                    </ul>
+                    <form method="post" action="{{ route('system.demo') }}" class="mt-4" onsubmit="return confirm('Load demo data? It can take up to a minute.')">
+                        @csrf
+                        <x-button icon="sparkles">Load demo data</x-button>
+                    </form>
+                @endif
+            </x-card>
             <x-card title="Campaign website sign-ups" description="Volunteers from the campaign website land in Volunteers. Link the website’s “Get involved” button to the join page, or have its form handler forward sign-ups here." icon="hand-heart" id="website">
                 <p class="label">Join page</p>
                 <p class="mb-4 text-sm"><a href="{{ route('join') }}" class="font-medium text-brand-fg underline" target="_blank">{{ route('join') }}</a></p>
