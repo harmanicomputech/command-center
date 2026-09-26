@@ -104,6 +104,8 @@ class BackgroundRunner
             // 6:30 AM Lagos: the AI "what to push next" suggestion, ready for the brief.
             'push-next' => [self::dailyAt($now, '06:30'), fn () => Artisan::call('ai:suggest')],
             // RSS news tracker, with keyword alerts.
+            // After the retention date, voter personal data is erased in batches.
+            'retention' => [self::everyMinutes($now, 15), fn () => Artisan::call('privacy:retention')],
             'news' => [self::everyMinutes($now, (int) config('messaging.news_every_minutes')), fn () => Artisan::call('news:fetch')],
         ];
     }

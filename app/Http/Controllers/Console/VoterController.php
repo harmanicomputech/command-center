@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Voter;
 use App\Models\Ward;
+use App\Services\Erasure;
 use App\Support\Audit;
 use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
@@ -115,6 +116,18 @@ class VoterController extends Controller
      * CSV of the registrations in view (admins only; audit-logged with the
      * row count).
      */
+    /**
+     * "Delete my data" in person: erase this voter (and any other record
+     * with the same number). Admin only; audited.
+     */
+    public function erase(Voter $voter, Erasure $erasure): RedirectResponse
+    {
+        $erasure->eraseVoter($voter, 'erased by staff');
+        Audit::record('privacy.erase', "Erased the personal data of registration #{$voter->id}", ['voter_id' => $voter->id], rows: 1);
+
+        return back()->with('status', 'Personal details erased. Anonymous counts are kept, and the number won’t get campaign SMS.');
+    }
+
     public function export(Request $request): StreamedResponse
     {
         $query = Voter::query()->with('ward.lga', 'agent')->whereNull('erased_at')->orderBy('id');

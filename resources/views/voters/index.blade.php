@@ -80,6 +80,11 @@
                                     <x-button size="sm" variant="ghost" icon="x">Invalid</x-button>
                                 </form>
                             @endif
+                            @if (auth()->user()->role->value === 'admin')
+                                <form method="post" action="{{ route('voters.erase', $voter) }}" onsubmit="return confirm('Erase this person’s name, number and details? Anonymous counts are kept. This can’t be undone.')">
+                                    @csrf<x-button size="sm" variant="ghost" icon="trash-2" class="text-bad">Erase</x-button>
+                                </form>
+                            @endif
                         @endif
                     </div>
                 @endif

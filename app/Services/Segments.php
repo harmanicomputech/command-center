@@ -51,7 +51,7 @@ class Segments
      */
     public function query(User $viewer, array $filters): Builder
     {
-        $query = Voter::query()->counted()->whereNull('erased_at')->inAreaOf($viewer);
+        $query = Voter::query()->counted()->inAreaOf($viewer);
 
         foreach ($filters as $key => $values) {
             $query->whereIn("voters.{$key}", $values);

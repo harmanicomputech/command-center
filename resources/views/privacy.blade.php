@@ -25,13 +25,32 @@
                 <h2 class="text-lg font-semibold">Your choices</h2>
                 <ul class="mt-2 list-disc space-y-1 pl-5 text-muted">
                     <li><strong class="text-ink">Stop messages:</strong> reply STOP to any campaign SMS.</li>
-                    <li><strong class="text-ink">Delete my data:</strong> ask the volunteer or coordinator who registered you, or any campaign office. We remove your personal details and keep only anonymous counts.</li>
+                    <li><strong class="text-ink">Delete my data:</strong> text <strong class="text-ink">DELETE</strong> in reply to any campaign SMS, use the form below, or ask the volunteer who registered you or any campaign office. We remove your personal details and keep only anonymous counts.</li>
                     <li><strong class="text-ink">See or correct your details:</strong> ask the same way.</li>
                 </ul>
             </section>
+            <section id="delete" class="scroll-mt-8 rounded-card border border-line bg-surface p-5 sm:p-6">
+                <h2 class="text-lg font-semibold">Ask us to delete your data</h2>
+                @if (session('requested'))
+                    <x-alert tone="good" title="Request received" class="mt-3">Someone from the campaign will call that number to confirm it’s you, then delete your details. You can also text DELETE in reply to any campaign SMS.</x-alert>
+                @else
+                    <p class="mt-2 text-muted">To make sure nobody deletes someone else’s details, we call the number back before deleting anything.</p>
+                    <form method="post" action="{{ route('privacy.request') }}#delete" class="mt-4 space-y-4">
+                        @csrf
+                        <div class="hidden" aria-hidden="true"><label for="p-website">Website</label><input id="p-website" name="website" tabindex="-1" autocomplete="off"></div>
+                        <x-input name="phone" type="tel" label="Phone number you registered with" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567" required />
+                        <x-input name="name" label="Your name" autocomplete="name" optional />
+                        <x-button icon="trash-2">Request deletion</x-button>
+                    </form>
+                @endif
+            </section>
             <section>
                 <h2 class="text-lg font-semibold">How long</h2>
-                <p class="mt-2 text-muted">Personal details are deleted after the election (by default 90 days after {{ \Illuminate\Support\Carbon::parse(config('campaign.election_date'))->format('j F Y') }}).</p>
+                <p class="mt-2 text-muted">@if ($retention = \App\Services\Erasure::retentionDate())
+                    Personal details are deleted after the election, from {{ $retention->format('j F Y') }}. Anonymous counts are kept.
+                @else
+                    Personal details are deleted after the election; the campaign will set the date.
+                @endif</p>
             </section>
             <section>
                 <h2 class="text-lg font-semibold">Who is responsible</h2>

@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\SmsCallbackController;
 use App\Models\AiCall;
 use App\Models\AuditLog;
+use App\Models\DataRequest;
 use App\Models\PushSubscription;
 use App\Models\User;
+use App\Services\Backup;
+use App\Services\Erasure;
 use App\Services\PollingUnitImporter;
 use App\Services\PushNotifier;
 use App\Services\RegisterStatus;
@@ -22,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 /**
@@ -58,6 +62,9 @@ class SystemController extends Controller
                 'recent' => AiCall::query()->with('user')->latest('created_at')->limit(8)->get(),
                 'model' => config('messaging.ai.model'),
             ],
+            'retention' => Erasure::retentionDate(),
+            'retentionDone' => Settings::get('privacy.retention_done_at'),
+            'openRequests' => DataRequest::query()->where('status', 'pending')->count(),
             'smsUrls' => [
                 'Delivery reports' => route('sms.delivery', SmsCallbackController::token()),
                 'Bulk SMS opt-out' => route('sms.opt-out', SmsCallbackController::token()),
@@ -88,6 +95,31 @@ class SystemController extends Controller
         Audit::record('system.push_keys', 'Set up notification (VAPID) keys');
 
         return back()->with('status', 'Notifications are set up. Each person turns them on under Notifications.');
+    }
+
+    /**
+     * Download a full backup as an AES-256 encrypted zip, with a password
+     * the admin chooses (it isn't stored anywhere).
+     */
+    public function backup(Request $request, Backup $backup): BinaryFileResponse|RedirectResponse
+    {
+        $data = $request->validate(['password' => ['required', 'string', 'min:12', 'max:200', 'confirmed']], [
+            'password.min' => 'Use at least 12 characters: the backup holds everyone’s records.',
+        ]);
+
+        @set_time_limit(600);
+
+        try {
+            ['path' => $path, 'rows' => $rows] = $backup->create($data['password']);
+        } catch (Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'The backup couldn’t be made: '.$e->getMessage());
+        }
+
+        Audit::record('system.backup', 'Downloaded a full encrypted backup', rows: $rows);
+
+        return response()->download($path, 'command-center-backup-'.Time::now()->format('Y-m-d-Hi').'.zip', ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
     }
 
     /**

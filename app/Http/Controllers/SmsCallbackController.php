@@ -3,19 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\BroadcastMessage;
+use App\Models\DataRequest;
 use App\Models\SmsOptOut;
+use App\Services\Erasure;
+use App\Support\Phone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 /**
  * Africa's Talking callbacks (from Election Shield): delivery reports,
- * bulk-SMS opt-outs, and incoming SMS where "STOP" opts the number out.
+ * bulk-SMS opt-outs, and incoming SMS where "STOP" opts the number out
+ * and "DELETE" erases the sender's registration.
  * The URLs carry a token derived from the app key (shown on the System page).
  */
 class SmsCallbackController extends Controller
 {
     public const STOP_WORDS = ['STOP', 'STOP ALL', 'UNSUBSCRIBE', 'END', 'QUIT', 'KWUSI'];
+
+    /** "Delete my data" by SMS: the sender's own number proves the request. */
+    public const DELETE_WORDS = ['DELETE', 'DELETE MY DATA', 'DELETE ME'];
 
     public static function token(): string
     {
@@ -49,13 +56,16 @@ class SmsCallbackController extends Controller
         return response()->json(['status' => 'ok']);
     }
 
-    public function inbox(Request $request, string $token): JsonResponse
+    public function inbox(Request $request, string $token, Erasure $erasure): JsonResponse
     {
         $this->check($token);
         $text = strtoupper(trim(preg_replace('/\s+/', ' ', (string) $request->input('text')) ?? ''));
 
         if (in_array($text, self::STOP_WORDS, true)) {
             SmsOptOut::record((string) $request->input('from'), 'sms reply');
+        } elseif (in_array($text, self::DELETE_WORDS, true) && ($phone = Phone::normalize((string) $request->input('from')))) {
+            $dataRequest = DataRequest::create(['channel' => 'sms', 'phone' => $phone, 'phone_hash' => Phone::hash($phone)]);
+            $erasure->close($dataRequest, true, null);
         }
 
         return response()->json(['status' => 'ok']);

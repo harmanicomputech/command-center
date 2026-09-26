@@ -61,6 +61,7 @@ class Navigation
                 ['Settings', 'settings', 'sliders-horizontal', ['settings'], $admin],
                 ['System', 'system', 'server', ['system', 'system.*'], $admin],
                 ['Audit log', 'audit', 'scroll-text', ['audit'], $admin],
+                ['Data requests', 'data-requests', 'shield-check', ['data-requests'], $admin],
                 ['Design system', 'design', 'palette', ['design'], $admin],
             ],
         ];

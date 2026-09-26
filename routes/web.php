@@ -8,6 +8,7 @@ use App\Http\Controllers\Console\AuthController;
 use App\Http\Controllers\Console\BroadcastController;
 use App\Http\Controllers\Console\ComplaintsController;
 use App\Http\Controllers\Console\DashboardController;
+use App\Http\Controllers\Console\DataRequestController;
 use App\Http\Controllers\Console\EventController;
 use App\Http\Controllers\Console\InfluencerController;
 use App\Http\Controllers\Console\IssueController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\Console\VoterController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\InviteController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\PwaController;
@@ -47,7 +49,8 @@ Route::post('/setup', [AuthController::class, 'setup'])->middleware('throttle:5,
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::view('/offline', 'offline')->name('offline');
-Route::view('/privacy', 'privacy')->name('privacy');
+Route::get('/privacy', [PrivacyController::class, 'show'])->name('privacy');
+Route::post('/privacy/delete', [PrivacyController::class, 'request'])->middleware('throttle:5,1')->name('privacy.request');
 // Surveys: the public web link, and the Africa's Talking poll callbacks.
 Route::get('/s/{token}', [PublicSurveyController::class, 'show'])->middleware('throttle:60,1')->name('survey.public');
 Route::post('/s/{token}', [PublicSurveyController::class, 'store'])->middleware('throttle:10,1')->name('survey.public.store');
@@ -222,6 +225,12 @@ Route::middleware('auth')->group(function () {
 
         Route::middleware('role:admin')->group(function () {
             Route::get('/voters/export', [VoterController::class, 'export'])->name('voters.export');
+            Route::post('/voters/{voter}/erase', [VoterController::class, 'erase'])->name('voters.erase');
+            Route::get('/data-requests', [DataRequestController::class, 'index'])->name('data-requests');
+            Route::post('/data-requests', [DataRequestController::class, 'store'])->name('data-requests.store');
+            Route::post('/data-requests/{dataRequest}/erase', [DataRequestController::class, 'erase'])->name('data-requests.erase');
+            Route::post('/data-requests/{dataRequest}/reject', [DataRequestController::class, 'reject'])->name('data-requests.reject');
+            Route::post('/system/backup', [SystemController::class, 'backup'])->middleware('throttle:5,1')->name('system.backup');
             Route::get('/users', [UserController::class, 'index'])->name('users');
             Route::post('/users', [UserController::class, 'store'])->name('users.store');
             Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');

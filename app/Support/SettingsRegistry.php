@@ -38,10 +38,11 @@ class SettingsRegistry
             ],
             'privacy' => [
                 'title' => 'Privacy',
-                'description' => 'Shown on the public privacy notice linked from the registration form.',
+                'description' => 'Shown on the public privacy notice linked from the registration form, and the retention rule.',
                 'fields' => [
                     'privacy.controller' => ['label' => 'Data controller', 'type' => 'text', 'default' => '', 'help' => 'The campaign organisation’s legal name. Registering with the NDPC as a data controller is recommended.'],
                     'privacy.dpo' => ['label' => 'Data protection officer', 'type' => 'text', 'default' => '', 'help' => 'A name and a way to reach them, e.g. an office phone or a generic email.'],
+                    'privacy.retention_days' => ['label' => 'Delete voter personal data this many days after the election', 'type' => 'int', 'default' => '90', 'min' => 0, 'max' => 3650, 'suffix' => 'days', 'help' => 'Names, numbers, communities, notes and locations are erased; anonymous counts stay. 0 switches automatic deletion off.'],
                 ],
             ],
             'messaging' => [

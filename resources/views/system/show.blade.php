@@ -160,6 +160,30 @@
                     <x-button variant="secondary" size="sm" icon="upload">{{ $wardMap ? 'Replace' : 'Load' }} ward boundaries</x-button>
                 </form>
             </x-card>
+            <x-card title="Backup" description="Every table as CSV in an AES-256 encrypted zip. Passwords, tokens and API keys are left out; phone numbers stay encrypted with the app key." icon="download" id="backup">
+                <form method="post" action="{{ route('system.backup') }}" class="space-y-4" autocomplete="off">
+                    @csrf
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <x-input name="password" type="password" label="Backup password" autocomplete="new-password" hint="At least 12 characters. It isn’t stored: without it the zip can’t be opened." required />
+                        <x-input name="password_confirmation" type="password" label="Repeat it" autocomplete="new-password" required />
+                    </div>
+                    <x-button icon="download" variant="secondary">Download backup</x-button>
+                </form>
+                <p class="hint mt-3">Also keep the host’s own database backups (DirectAdmin → Create/Restore Backups) and a copy of <code>APP_KEY</code> from <code>.env</code>.</p>
+            </x-card>
+            <x-card title="Privacy" description="Delete-my-data requests and the retention rule." icon="shield-check">
+                <p class="text-sm">{{ $openRequests }} {{ \Illuminate\Support\Str::plural('request', $openRequests) }} to check.</p>
+                <p class="mt-2 text-sm text-muted">
+                    @if ($retentionDone)
+                        Voter personal data was erased under the retention rule.
+                    @elseif ($retention)
+                        Voter personal data is erased automatically from <strong class="text-ink">{{ $retention->format('j F Y') }}</strong>.
+                    @else
+                        Automatic deletion after the election is off (Settings → Privacy).
+                    @endif
+                </p>
+                <x-button :href="route('data-requests')" variant="secondary" size="sm" icon="shield-check" class="mt-4">Data requests</x-button>
+            </x-card>
             <x-card title="Data" icon="database">
                 <dl class="divide-y divide-line text-sm">
                     @foreach ($counts as $label => $count)

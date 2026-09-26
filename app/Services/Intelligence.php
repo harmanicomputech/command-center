@@ -230,7 +230,7 @@ class Intelligence
         $weight = 'case support_level '.collect(config('canvass.support_levels'))->map(fn ($level, $key) => "when '{$key}' then {$level['weight']}")->implode(' ').' else 0.5 end';
         $weekStart = Points::weekStart();
 
-        return Voter::query()->counted()->whereNull('erased_at')
+        return Voter::query()->counted()
             ->selectRaw("{$column} as area, count(*) as n, avg({$weight}) as share, sum(case when captured_at < ? then 1 else 0 end) as n_before, sum(case when captured_at < ? then {$weight} else 0 end) as weight_before", [$weekStart, $weekStart])
             ->groupBy($column)->get()
             ->mapWithKeys(fn ($row) => [(int) $row->area => [
