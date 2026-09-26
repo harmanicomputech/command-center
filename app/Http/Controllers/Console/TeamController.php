@@ -81,7 +81,7 @@ class TeamController extends Controller
         $link = $invitations->issue($member);
         Audit::record('team.invite', "Invited {$member->name} as {$member->role->label()} in {$ward->fullName()}", ['user_id' => $member->id]);
 
-        return redirect()->route('team')->with('invite', $this->share($member, $link, $invitations));
+        return redirect()->route('team')->with('invite', self::share($member, $link, $invitations));
     }
 
     public function reinvite(Request $request, User $member, Invitations $invitations): RedirectResponse
@@ -90,7 +90,7 @@ class TeamController extends Controller
         $link = $invitations->issue($member);
         Audit::record('team.reinvite', "Sent {$member->name} a new sign-in link", ['user_id' => $member->id]);
 
-        return redirect()->route('team')->with('invite', $this->share($member, $link, $invitations));
+        return redirect()->route('team')->with('invite', self::share($member, $link, $invitations));
     }
 
     /**
@@ -125,7 +125,7 @@ class TeamController extends Controller
     /**
      * @return array{name: string, link: string, message: string, phone: string}
      */
-    private function share(User $member, string $link, Invitations $invitations): array
+    public static function share(User $member, string $link, Invitations $invitations): array
     {
         return [
             'name' => $member->name,

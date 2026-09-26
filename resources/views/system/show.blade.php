@@ -160,6 +160,16 @@
                     <x-button variant="secondary" size="sm" icon="upload">{{ $wardMap ? 'Replace' : 'Load' }} ward boundaries</x-button>
                 </form>
             </x-card>
+            <x-card title="Campaign website sign-ups" description="Volunteers from the campaign website land in Volunteers. Link the website’s “Get involved” button to the join page, or have its form handler forward sign-ups here." icon="hand-heart" id="website">
+                <p class="label">Join page</p>
+                <p class="mb-4 text-sm"><a href="{{ route('join') }}" class="font-medium text-brand-fg underline" target="_blank">{{ route('join') }}</a></p>
+                <p class="label">Endpoint for the website’s form handler (POST, keep private)</p>
+                <div x-data="copy(@js($volunteerUrl))" class="flex gap-2">
+                    <input type="text" readonly value="{{ $volunteerUrl }}" class="input num min-w-0 flex-1 text-xs" aria-label="Volunteer endpoint" x-on:focus="$el.select()">
+                    <button type="button" class="btn btn-secondary btn-icon flex-none" x-on:click="copy()" :aria-label="copied ? 'Copied' : 'Copy'"><x-icon name="copy" /></button>
+                </div>
+                <p class="hint">Fields: <code>name</code>, <code>phone</code>, <code>lga</code> (name), <code>ward</code>, <code>help[]</code> ({{ implode(', ', array_keys(config('volunteers.help'))) }}), <code>message</code>, <code>consent=1</code>. Answers JSON: <code>{"status":"ok"}</code>, or 422 with the errors.</p>
+            </x-card>
             <x-card title="Backup" description="Every table as CSV in an AES-256 encrypted zip. Passwords, tokens and API keys are left out; phone numbers stay encrypted with the app key." icon="download" id="backup">
                 <form method="post" action="{{ route('system.backup') }}" class="space-y-4" autocomplete="off">
                     @csrf

@@ -29,7 +29,7 @@ class Backup
         'policy_documents' => [], 'message_drafts' => [], 'ai_calls' => [],
         'broadcasts' => [], 'broadcast_messages' => [], 'sms_opt_outs' => [],
         'narratives' => [], 'narrative_reports' => [], 'news_feeds' => [], 'news_items' => [], 'page_posts' => [],
-        'data_requests' => ['phone'], 'audit_logs' => [],
+        'data_requests' => ['phone'], 'volunteers' => [], 'audit_logs' => [],
     ];
 
     /**

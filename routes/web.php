@@ -30,9 +30,11 @@ use App\Http\Controllers\Console\SystemController;
 use App\Http\Controllers\Console\TaskController;
 use App\Http\Controllers\Console\TeamController;
 use App\Http\Controllers\Console\UserController;
+use App\Http\Controllers\Console\VolunteerController;
 use App\Http\Controllers\Console\VoterController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\InviteController;
+use App\Http\Controllers\JoinController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\PublicSurveyController;
@@ -60,6 +62,11 @@ Route::post('/api/poll/sms/{token}', [SurveyPollController::class, 'sms'])->midd
 Route::post('/api/sms/delivery/{token}', [SmsCallbackController::class, 'delivery'])->middleware('throttle:600,1')->name('sms.delivery');
 Route::post('/api/sms/opt-out/{token}', [SmsCallbackController::class, 'optOut'])->middleware('throttle:300,1')->name('sms.opt-out');
 Route::post('/api/sms/inbox/{token}', [SmsCallbackController::class, 'inbox'])->middleware('throttle:300,1')->name('sms.inbox');
+
+Route::get('/join', [JoinController::class, 'show'])->name('join');
+Route::post('/join', [JoinController::class, 'store'])->middleware('throttle:5,1')->name('join.store');
+// The campaign website's form handler forwards sign-ups here (token on the System page).
+Route::post('/api/volunteers/{token}', [JoinController::class, 'api'])->middleware('throttle:60,1')->name('volunteers.api');
 
 Route::get('/invite/{token}', [InviteController::class, 'show'])->middleware('throttle:30,1')->name('invite');
 Route::post('/invite/{token}', [InviteController::class, 'accept'])->middleware('throttle:10,1')->name('invite.accept');
@@ -211,6 +218,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/leaderboard/rewards', [LeaderboardController::class, 'reward'])->middleware('role:admin')->name('leaderboard.reward');
         Route::post('/events/{event}/photos', [PhotoController::class, 'storeForEvent'])->name('events.photos');
 
+        Route::get('/volunteers', [VolunteerController::class, 'index'])->name('volunteers');
+        Route::post('/volunteers/{volunteer}/status', [VolunteerController::class, 'status'])->name('volunteers.status');
+        Route::post('/volunteers/{volunteer}/invite', [VolunteerController::class, 'invite'])->name('volunteers.invite');
         Route::get('/voters', [VoterController::class, 'index'])->name('voters');
         Route::post('/voters/{voter}/verify', [VoterController::class, 'verify'])->name('voters.verify');
         Route::post('/voters/{voter}/invalid', [VoterController::class, 'invalidate'])->name('voters.invalidate');

@@ -40,6 +40,7 @@ class Navigation
             'Field' => [
                 ['People', 'people', 'users', ['people', 'people.*'], null],
                 ['Structure health', 'structure', 'heart-pulse', ['structure'], null],
+                ['Volunteers', 'volunteers', 'hand-heart', ['volunteers'], null],
                 ['Team & invites', 'team', 'user-plus', ['team'], [UserRole::Admin, UserRole::LgaLeader, UserRole::WardCoordinator]],
                 ['Registrations', 'voters', 'user-round-check', ['voters', 'voters.*'], null],
                 ['Tasks', 'tasks', 'list-todo', ['tasks', 'tasks.*'], null],

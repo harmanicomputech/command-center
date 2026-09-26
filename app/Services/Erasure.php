@@ -7,6 +7,7 @@ use App\Models\Influencer;
 use App\Models\SmsOptOut;
 use App\Models\SurveyResponse;
 use App\Models\User;
+use App\Models\Volunteer;
 use App\Models\Voter;
 use App\Support\Audit;
 use App\Support\Phone;
@@ -38,6 +39,7 @@ class Erasure
 
         SmsOptOut::record($phone, $source);
         SurveyResponse::query()->where('phone_hash', $hash)->update(['phone_hash' => null]);
+        Volunteer::query()->where('phone_hash', $hash)->where('status', '!=', 'joined')->delete();
 
         return $this->eraseQuery(Voter::query()->where('phone_hash', $hash));
     }
@@ -95,6 +97,7 @@ class Erasure
             Influencer::query()->whereNotNull('contact_phone')->update(['contact_phone' => null]);
             DataRequest::query()->whereNotNull('phone')->update(['phone' => null]);
             SurveyResponse::query()->whereNotNull('phone_hash')->update(['phone_hash' => null]);
+            Volunteer::query()->where('status', '!=', 'joined')->delete();
             if (! Settings::get('privacy.retention_done_at')) {
                 Settings::set('privacy.retention_done_at', now()->toIso8601String());
             }

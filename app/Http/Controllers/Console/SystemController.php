@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Console;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\JoinController;
 use App\Http\Controllers\SmsCallbackController;
 use App\Models\AiCall;
 use App\Models\AuditLog;
@@ -65,6 +66,7 @@ class SystemController extends Controller
             'retention' => Erasure::retentionDate(),
             'retentionDone' => Settings::get('privacy.retention_done_at'),
             'openRequests' => DataRequest::query()->where('status', 'pending')->count(),
+            'volunteerUrl' => route('volunteers.api', JoinController::token()),
             'smsUrls' => [
                 'Delivery reports' => route('sms.delivery', SmsCallbackController::token()),
                 'Bulk SMS opt-out' => route('sms.opt-out', SmsCallbackController::token()),
