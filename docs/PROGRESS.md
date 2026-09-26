@@ -21,11 +21,17 @@ Every phase in the brief's build order is built, tested (94 automated tests) and
 8. **System → Backup:** download one with a password and open it.
 9. Anything slow, confusing, broken, or not matching the campaign's look.
 
+## Live-test feedback
+
+| # | What happened | Fix | Status |
+| --- | --- | --- | --- |
+| 1 | First-admin setup failed on the host's MySQL: `1059 Identifier name 'broadcast_messages_broadcast_id_recipient_type_recipient_id_unique' is too long` | The index has a short explicit name. The migration now clears tables left by a failed earlier attempt (MySQL can't roll back table creation), so **re-running setup on the same database works**. A guard test fails on any name over 64 characters; the whole suite, the web setup from the zip and every page were run on MariaDB 10.11 (strict mode, like Laravel's MySQL connection); CI gains a MySQL job. | ✅ Fixed |
+
 ## What's left
 
-- **Feedback from the live test** (to be added here).
+- **More feedback from the live test** (add it above).
 - **Owner decisions** below, still on placeholders.
-- Not verified here and worth watching on the live server: page speed on the host's **MySQL** (the load test used SQLite), Claude and Africa's Talking with real keys, and the host's PHP time limit for AI drafts.
+- Not verified here and worth watching on the live server: page speed with many records on the host's **MySQL** (the 500k load test used SQLite; the suite and every page now also run on MariaDB), Claude and Africa's Talking with real keys, and the host's PHP time limit for AI drafts.
 
 ## Phases
 

@@ -28,11 +28,48 @@ jobs:
       - run: vendor/bin/pint --test
       - run: php artisan test
 
+  # The host runs MySQL: run the suite there too (identifier lengths,
+  # strict GROUP BY and DDL differences don't show up on SQLite).
+  test-mysql:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: command_center
+          MYSQL_USER: cc
+          MYSQL_PASSWORD: cc-test-pass
+          MYSQL_ROOT_PASSWORD: root-test-pass
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1" --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, zip, gd, mbstring
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: npm ci && npm run build
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: command_center
+          DB_USERNAME: cc
+          DB_PASSWORD: cc-test-pass
+
   # Upload packages for the shared host. The full zip's .env holds
   # placeholders that the app replaces with fresh secrets on its first
   # request, so nothing secret is published with this public repository.
   package:
-    needs: test
+    needs: [test, test-mysql]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

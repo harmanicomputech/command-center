@@ -13,6 +13,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // MySQL can't roll back CREATE TABLE, so a failed earlier attempt of
+        // this migration (it isn't recorded as run) may have left some of its
+        // tables behind. Only this migration creates them: start clean.
+        $this->down();
+
         Schema::create('policy_documents', function (Blueprint $table) {
             $table->id();
             $table->string('topic', 30)->index();
@@ -94,7 +99,8 @@ return new class extends Migration
             $table->timestamp('sent_at')->nullable();
             $table->timestamp('delivered_at')->nullable();
             $table->timestamps();
-            $table->unique(['broadcast_id', 'recipient_type', 'recipient_id']);
+            // Named explicitly: MySQL caps identifiers at 64 characters.
+            $table->unique(['broadcast_id', 'recipient_type', 'recipient_id'], 'broadcast_messages_recipient_unique');
         });
 
         // STOP replies, by keyed phone hash: stays even if the voter record is erased.

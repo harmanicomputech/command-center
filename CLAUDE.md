@@ -6,7 +6,7 @@ The full brief is `docs/HANDOFF.md`; progress and the owner's open decisions are
 
 ## Commands
 
-- `php artisan test` (or `scripts/test.sh` for a short summary): the whole suite, before every commit
+- `php artisan test` (or `scripts/test.sh` for a short summary): the whole suite, before every commit. **Before a release, also run it on MySQL/MariaDB** (the host's database): `DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=… DB_USERNAME=… DB_PASSWORD=… php artisan test` (CI's `test-mysql` job does this); SQLite misses MySQL's 64-character identifier limit, strict GROUP BY and non-transactional DDL
 - `vendor/bin/pint`: format code (CI runs `pint --test`)
 - `npm run build`: compile CSS/JS into `public/build/` (the host has no Node; the build ships in the zip)
 - `scripts/build-shared-hosting.sh [--update|--ci]`: upload zips in `dist/`; CI uploads them as the `command-center-upload-packages` artifact
@@ -37,6 +37,7 @@ The full brief is `docs/HANDOFF.md`; progress and the owner's open decisions are
 - Never push with failing tests or `pint --test` failures. Screenshot new screens at 360/768/1280, light and dark, and fix overflow before a phase is done.
 - The repo is public: no real personal data, API keys or the owner's email address, in code, fixtures or commits (tests use `example.com` and fake `0800` numbers; `GuardTest` checks).
 - Data protection (brief §9): no religion, ethnicity or PVC/VIN per person; age band, not date of birth; voter phones encrypted with a keyed hash (`App\Support\Phone::hash`) for de-duplication; exports admin-only and audit-logged with row counts (`Audit::record(..., rows: n)`); pages with phone numbers are never cached by the service worker.
+- Migrations: name long indexes explicitly (MySQL caps identifiers at 64 characters; `GuardTest` checks), and remember a failed MySQL migration leaves its tables behind.
 - Blade: never a directive straight after a letter or digit (`KB@if`), never a one-line `@php(...)` before a `@php … @endphp` block, never `</x-slot>@if` on one line (all guarded by `GuardTest`).
 - JS: read a form's URL with `form.getAttribute('action')`.
 - Accessibility: axe-core finds no WCAG A/AA violations today; keep it that way (text on colour needs 4.5:1, give progress bars and icon links names, never fade content to show state).

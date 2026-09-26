@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Services\LgaMap;
 use FilesystemIterator;
+use Illuminate\Support\Facades\Schema;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Tests\TestCase;
@@ -91,5 +92,29 @@ class GuardTest extends TestCase
     public function test_every_lga_has_a_map_tile(): void
     {
         $this->assertEqualsCanonicalizing(config('campaign.lgas'), array_keys(LgaMap::LAYOUT));
+    }
+
+    /**
+     * MySQL caps index and constraint names at 64 characters (SQLite, used
+     * in tests, doesn't), so a long generated name only fails on the host.
+     */
+    public function test_database_identifiers_fit_mysql(): void
+    {
+        $this->artisan('migrate:fresh');
+        $long = [];
+
+        foreach (Schema::getTables() as $table) {
+            $name = $table['name'];
+            foreach (Schema::getIndexes($name) as $index) {
+                strlen($index['name']) > 64 && $long[] = $index['name'];
+            }
+            foreach (Schema::getForeignKeys($name) as $key) {
+                $generated = $name.'_'.implode('_', $key['columns']).'_foreign';
+                strlen($generated) > 64 && $long[] = $generated;
+            }
+            strlen($name) > 64 && $long[] = $name;
+        }
+
+        $this->assertSame([], $long, 'Give these an explicit shorter name in the migration.');
     }
 }
