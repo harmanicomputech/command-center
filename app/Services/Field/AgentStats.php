@@ -4,13 +4,14 @@ namespace App\Services\Field;
 
 use App\Models\User;
 use App\Models\Voter;
+use App\Services\Points;
 use App\Support\Time;
 use Illuminate\Support\Carbon;
 
 /**
  * The agent's own numbers for the field home screen: today, this week, the
- * streak (consecutive Lagos days with a registration) and their rank in the
- * ward this week. Invalid records and unresolved duplicates don't count.
+ * streak (consecutive Lagos days with a registration) and their rank on
+ * this week's ward leaderboard. Invalid records and unresolved duplicates don't count.
  */
 class AgentStats
 {
@@ -56,6 +57,8 @@ class AgentStats
     }
 
     /**
+     * The agent's place on this week's ward leaderboard (by points).
+     *
      * @return array{rank: ?int, ranked: int}
      */
     private function rank(User $user, Carbon $since): array
@@ -64,20 +67,9 @@ class AgentStats
             return ['rank' => null, 'ranked' => 0];
         }
 
-        $counts = Voter::query()->counted()
-            ->join('users', 'users.id', '=', 'voters.captured_by')
-            ->where('users.ward_id', $user->ward_id)
-            ->where('voters.captured_at', '>=', $since)
-            ->selectRaw('voters.captured_by, count(*) as n')
-            ->groupBy('voters.captured_by')
-            ->pluck('n', 'captured_by')->map(fn ($n) => (int) $n)->sortDesc();
+        $board = app(Points::class)->agents($user->ward_id, null, $since)->filter(fn ($row) => $row['points'] > 0);
+        $mine = $board->first(fn ($row) => $row['user']->id === $user->id);
 
-        if (! $counts->has($user->id)) {
-            return ['rank' => null, 'ranked' => $counts->count()];
-        }
-
-        $mine = $counts[$user->id];
-
-        return ['rank' => $counts->filter(fn (int $n) => $n > $mine)->count() + 1, 'ranked' => $counts->count()];
+        return ['rank' => $mine['rank'] ?? null, 'ranked' => $board->count()];
     }
 }

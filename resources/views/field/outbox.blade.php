@@ -24,7 +24,7 @@
                         <span class="mt-1 size-2.5 flex-none rounded-full" :class="item.status === 'failed' ? 'bg-bad' : 'bg-info'"></span>
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-semibold" x-text="item.label"></p>
-                            <p class="text-xs text-subtle"><span x-text="item.type === 'voter' ? 'Registration' : item.type"></span> · <span x-text="when(item)"></span></p>
+                            <p class="text-xs text-subtle"><span x-text="({ voter: 'Registration', task_report: 'Task update', issue: 'Issue report', photo: 'Photo' })[item.type] || item.type"></span> · <span x-text="when(item)"></span></p>
                             <p class="mt-1 text-sm" :class="item.status === 'failed' ? 'text-bad font-medium' : 'text-muted'" x-show="item.error" x-text="item.error"></p>
                         </div>
                     </div>

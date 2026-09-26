@@ -63,7 +63,7 @@ class EventController extends Controller
             ->orderBy('name')->get();
 
         return view('events.show', [
-            'event' => $event->load('lga', 'ward', 'author', 'attendees'),
+            'event' => $event->load('lga', 'ward', 'author', 'attendees', 'photos'),
             'team' => $team,
             ...$this->formOptions($request->user()),
         ]);

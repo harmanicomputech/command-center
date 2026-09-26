@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Issue;
 use App\Models\PollingUnit;
+use App\Models\Task;
 use App\Models\Voter;
 use App\Models\Ward;
+use App\Services\Badges;
 use App\Services\Field\AgentStats;
 use App\Services\Field\RegisterVoter;
+use App\Services\Points;
 use App\Support\Settings;
 use App\Support\Time;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +35,10 @@ class FieldController extends Controller
             'stats' => $stats->for($user),
             'target' => Settings::int('target.agent_daily'),
             'recent' => Voter::query()->where('captured_by', $user->id)->latest('captured_at')->limit(3)->get(),
+            'tasks' => Task::query()->for($user)->where('status', Task::OPEN)
+                ->with(['reports' => fn ($query) => $query->where('user_id', $user->id)])
+                ->orderByRaw('due_on is null')->orderBy('due_on')->get()
+                ->reject(fn (Task $task) => $task->doneBy($user))->take(3)->values(),
         ]);
     }
 
@@ -87,13 +95,75 @@ class FieldController extends Controller
         return view('field.me', ['user' => $request->user(), 'stats' => $stats->for($request->user())]);
     }
 
-    public function tasks(): View
+    /**
+     * "My tasks": mine and my ward's, open first. Kept on the phone by the
+     * service worker, so it opens without network.
+     */
+    public function tasks(Request $request): View
     {
-        return view('field.soon', ['page' => 'tasks']);
+        $user = $request->user();
+
+        return view('field.tasks', [
+            'user' => $user,
+            'tasks' => Task::query()->for($user)->with(['reports' => fn ($query) => $query->where('user_id', $user->id)])
+                ->where(fn ($query) => $query->where('status', Task::OPEN)->orWhere('updated_at', '>=', now()->subDays(14)))
+                ->orderByRaw("status = 'closed'")->orderByRaw('due_on is null')->orderBy('due_on')->get(),
+        ]);
     }
 
-    public function issues(): View
+    public function task(Request $request, Task $task): View
     {
-        return view('field.soon', ['page' => 'issues']);
+        $user = $request->user();
+        abort_unless(Task::query()->for($user)->whereKey($task->id)->exists(), 404);
+        $task->load(['reports' => fn ($query) => $query->where('user_id', $user->id)->with('photos'), 'author']);
+
+        return view('field.task', ['task' => $task, 'user' => $user]);
+    }
+
+    public function issues(Request $request): View
+    {
+        $user = $request->user();
+
+        return view('field.issues', [
+            'mine' => Issue::query()->where('reported_by', $user->id)->with('photos')->latest('reported_at')->limit(10)->get(),
+            ...$this->wardChoices($user),
+        ]);
+    }
+
+    public function leaderboard(Request $request, Points $points, Badges $badges): View
+    {
+        $user = $request->user();
+        $period = $request->query('period') === 'all' ? 'all' : 'week';
+        $scope = $request->query('scope') === 'lga' ? 'lga' : 'ward';
+        $since = $period === 'week' ? Points::weekStart() : null;
+
+        $rows = $scope === 'lga'
+            ? $points->agents(null, $user->lga_id ?? $user->ward?->lga_id, $since)
+            : $points->agents($user->ward_id, null, $since);
+
+        return view('field.leaderboard', [
+            'rows' => $rows,
+            'me' => $rows->first(fn ($row) => $row['user']->id === $user->id),
+            'period' => $period,
+            'scope' => $scope,
+            'user' => $user,
+            'badges' => $badges->for($user),
+        ]);
+    }
+
+    /**
+     * The wards an agent may report in (their LGA), their own first.
+     *
+     * @return array{wards: array<int, string>, defaultWard: ?int}
+     */
+    private function wardChoices($user): array
+    {
+        $lgaId = $user->lga_id ?? $user->ward?->lga_id;
+        $wards = Ward::query()->when($lgaId && ! $user->role->isStatewide(), fn ($query) => $query->where('lga_id', $lgaId))->with('lga')->orderBy('name')->get();
+
+        return [
+            'wards' => $wards->mapWithKeys(fn (Ward $ward) => [$ward->id => $user->role->isStatewide() ? $ward->fullName() : $ward->name])->all(),
+            'defaultWard' => $user->ward_id ?? $wards->first()?->id,
+        ];
     }
 }

@@ -8,16 +8,20 @@ use App\Http\Controllers\Console\AuthController;
 use App\Http\Controllers\Console\DashboardController;
 use App\Http\Controllers\Console\EventController;
 use App\Http\Controllers\Console\InfluencerController;
+use App\Http\Controllers\Console\IssueController;
+use App\Http\Controllers\Console\LeaderboardController;
 use App\Http\Controllers\Console\PeopleController;
 use App\Http\Controllers\Console\SearchController;
 use App\Http\Controllers\Console\SettingsController;
 use App\Http\Controllers\Console\StructureController;
 use App\Http\Controllers\Console\SystemController;
+use App\Http\Controllers\Console\TaskController;
 use App\Http\Controllers\Console\TeamController;
 use App\Http\Controllers\Console\UserController;
 use App\Http\Controllers\Console\VoterController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\InviteController;
+use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RunnerController;
 use Illuminate\Support\Facades\Route;
@@ -46,12 +50,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/outbox', [FieldController::class, 'outbox'])->name('outbox');
         Route::get('/registrations', [FieldController::class, 'registrations'])->name('registrations');
         Route::get('/tasks', [FieldController::class, 'tasks'])->name('tasks');
+        Route::get('/tasks/{task}', [FieldController::class, 'task'])->name('task');
         Route::get('/issues', [FieldController::class, 'issues'])->name('issues');
+        Route::get('/leaderboard', [FieldController::class, 'leaderboard'])->name('leaderboard');
     });
 
     // The Field Force outbox (session auth; the token route gives a fresh CSRF token).
     Route::get('/api/field/token', [FieldSyncController::class, 'token'])->name('field.token');
     Route::post('/api/field/sync', [FieldSyncController::class, 'sync'])->middleware('throttle:120,1')->name('field.sync');
+    Route::post('/api/field/photos', [PhotoController::class, 'upload'])->middleware('throttle:60,1')->name('field.photos');
+    Route::get('/photos/{photo}/{size?}', [PhotoController::class, 'show'])->whereIn('size', ['thumb'])->name('photos.show');
 
     Route::get('/account', [AccountController::class, 'show'])->name('account');
     Route::put('/account', [AccountController::class, 'update'])->name('account.update');
@@ -79,6 +87,19 @@ Route::middleware('auth')->group(function () {
         Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
         Route::post('/events/{event}/record', [EventController::class, 'record'])->name('events.record');
         Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+        Route::get('/tasks', [TaskController::class, 'index'])->name('tasks');
+        Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
+        Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
+        Route::post('/tasks/{task}/status', [TaskController::class, 'status'])->name('tasks.status');
+        Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+        Route::get('/issues', [IssueController::class, 'index'])->name('issues');
+        Route::get('/issues/brief', [IssueController::class, 'brief'])->name('issues.brief');
+        Route::post('/issues/{issue}/status', [IssueController::class, 'status'])->name('issues.status');
+        Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard');
+        Route::get('/leaderboard/review', [LeaderboardController::class, 'review'])->name('leaderboard.review');
+        Route::post('/leaderboard/rewards', [LeaderboardController::class, 'reward'])->middleware('role:admin')->name('leaderboard.reward');
+        Route::post('/events/{event}/photos', [PhotoController::class, 'storeForEvent'])->name('events.photos');
 
         Route::get('/voters', [VoterController::class, 'index'])->name('voters');
         Route::post('/voters/{voter}/verify', [VoterController::class, 'verify'])->name('voters.verify');

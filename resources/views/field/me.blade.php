@@ -19,6 +19,10 @@
                 <span class="flex items-center gap-3"><x-icon name="user-round-check" class="text-subtle" />My registrations</span>
                 <x-icon name="chevron-right" class="text-subtle" />
             </a>
+            <a href="{{ route('field.leaderboard') }}" class="flex min-h-12 items-center justify-between gap-3 p-4 text-sm font-semibold">
+                <span class="flex items-center gap-3"><x-icon name="trophy" class="text-subtle" />Leaderboard and badges</span>
+                <x-icon name="chevron-right" class="text-subtle" />
+            </a>
             <a href="{{ route('field.outbox') }}" class="flex min-h-12 items-center justify-between gap-3 p-4 text-sm font-semibold">
                 <span class="flex items-center gap-3"><x-icon name="cloud-upload" class="text-subtle" />Waiting on this phone</span>
                 <span class="num text-subtle" x-data x-text="$store.outbox.total"></span>

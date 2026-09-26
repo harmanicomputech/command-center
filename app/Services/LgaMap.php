@@ -70,6 +70,10 @@ class LgaMap
             return ['step' => 0, 'value' => '—'];
         }
 
+        if ($value == 0) {
+            return ['step' => 0, 'value' => $this->format(0, $format)];
+        }
+
         $known = array_filter($values, fn ($v) => $v !== null);
         [$min, $max] = [min($known), max($known)];
         $step = $max > $min ? 1 + (int) floor(4 * ($value - $min) / ($max - $min)) : 3;

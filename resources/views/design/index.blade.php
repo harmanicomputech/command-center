@@ -8,7 +8,7 @@
         'Diverging ramp' => ['div-strong' => 'Stronghold', 'div-lean' => 'Leaning', 'div-swing' => 'Swing', 'div-weakish' => 'Leaning away', 'div-weak' => 'Weak', 'div-unknown' => 'Unknown'],
     ];
     $sizes = [44 => 'Hero 44', 36 => 'Hero 36', 28 => 'Page title 28', 22 => 'Section 22', 18 => 'Lead 18', 16 => 'Body 16', 14 => 'UI 14', 12 => 'Caption 12'];
-    $sections = ['Colour', 'Type', 'Shape', 'Icons', 'Buttons', 'Forms', 'Feedback', 'Data', 'Layout', 'Motion'];
+    $sections = ['Colour', 'Type', 'Shape', 'Icons', 'Buttons', 'Forms', 'Feedback', 'Data', 'Field', 'Layout', 'Motion'];
 @endphp
 <x-layouts.app title="Design system" wide>
     <x-page-header title="Design system" eyebrow="Admin · living style guide"
@@ -229,6 +229,29 @@
                     <div class="flex -space-x-2">
                         @foreach (['Ada Obi', 'Chika Nwankwo', 'Emeka Eze', 'Ngozi Ali', 'Uche Agu'] as $name)<x-avatar :name="$name" :size="34" class="ring-2 ring-surface" />@endforeach
                     </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- Gamification --}}
+        <section id="field" class="scroll-mt-32">
+            <h2 class="text-xl font-semibold tracking-tight">Field components</h2>
+            <p class="mt-1 text-sm text-muted">The podium (top 3, rank medals, the viewer’s ring), badges, engagement levels and the photo picker (shrinks on the phone, queues offline). Sample names are illustrative.</p>
+            <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div class="card p-6">
+                    <x-podium :rows="collect([['name' => 'Ada Obi', 'id' => 1, 'points' => 240, 'rank' => 1], ['name' => 'Emeka Eze', 'id' => 2, 'points' => 198, 'rank' => 2], ['name' => 'Ngozi Ali', 'id' => 3, 'points' => 150, 'rank' => 3]])" :highlight="2" class="mx-auto max-w-sm" />
+                </div>
+                <div class="card space-y-5 p-6">
+                    <div class="flex flex-wrap gap-2"><x-engagement level="active" /><x-engagement level="occasional" /><x-engagement level="dormant" /></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        @foreach (\App\Services\Badges::ALL as $key => [$name, $description, $icon])
+                            <div class="card flex items-center gap-3 p-3 {{ $loop->index < 2 ? '' : 'opacity-50 grayscale' }}">
+                                <span class="grid size-10 flex-none place-items-center rounded-full {{ $loop->index < 2 ? 'bg-accent-soft text-accent-fg' : 'bg-surface-2 text-subtle' }}"><x-icon :name="$icon" /></span>
+                                <span class="min-w-0"><span class="block truncate text-sm font-semibold">{{ $name }}</span><span class="block text-xs leading-tight text-subtle">{{ $description }}</span></span>
+                            </div>
+                        @endforeach
+                    </div>
+                    <x-photo-field />
                 </div>
             </div>
         </section>

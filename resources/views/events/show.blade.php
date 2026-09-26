@@ -49,6 +49,21 @@
         </x-card>
 
         <div class="space-y-6">
+            <x-card title="Photos" icon="upload">
+                @if ($event->photos->isNotEmpty())
+                    <div class="mb-4 grid grid-cols-3 gap-2">
+                        @foreach ($event->photos as $photo)
+                            <a href="{{ $photo->url() }}" target="_blank"><img src="{{ $photo->url(true) }}" alt="Event photo" class="aspect-square w-full rounded-lg border border-line object-cover" loading="lazy"></a>
+                        @endforeach
+                    </div>
+                @endif
+                <form method="post" action="{{ route('events.photos', $event) }}" enctype="multipart/form-data" class="space-y-3">
+                    @csrf
+                    <input type="file" name="photos[]" accept="image/*" multiple class="input" aria-label="Photos">
+                    @error('photos')<p class="field-error"><x-icon name="circle-alert" />{{ $message }}</p>@enderror
+                    <x-button variant="secondary" size="sm" icon="upload">Add photos</x-button>
+                </form>
+            </x-card>
             <x-card title="Summary" icon="calendar">
                 <dl class="divide-y divide-line text-sm">
                     <div class="flex justify-between gap-4 py-2.5 first:pt-0"><dt class="text-muted">Expected</dt><dd class="num font-medium">{{ $event->expected ? number_format($event->expected) : '—' }}</dd></div>

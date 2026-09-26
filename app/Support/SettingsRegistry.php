@@ -43,7 +43,7 @@ class SettingsRegistry
             ],
             'points' => [
                 'title' => 'Points',
-                'description' => 'What each action earns on the leaderboards. Changes apply to new points only.',
+                'description' => 'What each action earns on the leaderboards. Points are worked out from the records, so a change applies to everyone’s totals at once.',
                 'fields' => [
                     'points.registration_verified' => ['label' => 'Verified registration', 'type' => 'int', 'default' => '10', 'min' => 0, 'max' => 1000, 'suffix' => 'points'],
                     'points.registration_unverified' => ['label' => 'Registration, not yet verified', 'type' => 'int', 'default' => '3', 'min' => 0, 'max' => 1000, 'suffix' => 'points', 'help' => 'Goes up to the verified amount once a coordinator verifies it.'],

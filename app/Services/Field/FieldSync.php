@@ -19,6 +19,8 @@ class FieldSync
     /** @var array<string, class-string<SyncHandler>> */
     public const HANDLERS = [
         'voter' => RegisterVoter::class,
+        'task_report' => ReportTask::class,
+        'issue' => ReportIssue::class,
     ];
 
     public const MAX_ITEMS = 50;

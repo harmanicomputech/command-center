@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\UserRole;
 use App\Models\Event;
+use App\Models\Issue;
+use App\Models\TaskReport;
 use App\Models\User;
 use App\Models\Voter;
 use App\Models\Ward;
@@ -64,14 +66,17 @@ class Structure
     }
 
     /**
-     * Other kinds of output (tasks in phase 4) join here.
+     * Task updates and issue reports.
      *
      * @param  list<int>  $ids
      * @return list<Collection<int, string>>
      */
     protected function extraOutputs(array $ids): array
     {
-        return [];
+        return [
+            TaskReport::query()->whereIn('user_id', $ids)->selectRaw('user_id, max(reported_at) as at')->groupBy('user_id')->pluck('at', 'user_id'),
+            Issue::query()->whereIn('reported_by', $ids)->selectRaw('reported_by as user_id, max(reported_at) as at')->groupBy('reported_by')->pluck('at', 'user_id'),
+        ];
     }
 
     /**

@@ -19,7 +19,7 @@
                 <p class="text-sm font-semibold">{{ $stats['today'] >= $target ? 'Target reached. Brilliant work.' : ($target - $stats['today']).' to go today' }}</p>
                 <div class="mt-3 flex flex-wrap gap-2">
                     <span class="badge badge-accent"><span aria-hidden="true">🔥</span> {{ $stats['streak'] }}-day streak</span>
-                    <span class="badge">{{ $stats['rank'] ? '#'.$stats['rank'].' of '.$stats['ranked'].' in your ward' : 'Not ranked yet this week' }}</span>
+                    <a href="{{ route('field.leaderboard') }}" class="badge">{{ $stats['rank'] ? '#'.$stats['rank'].' of '.$stats['ranked'].' in your ward' : 'Not ranked yet this week' }}</a>
                 </div>
                 <p class="mt-3 text-xs text-muted"><span class="num font-semibold text-ink">{{ number_format($stats['week']) }}</span> this week · <span class="num font-semibold text-ink">{{ number_format($stats['total']) }}</span> in all</p>
             </div>
@@ -32,8 +32,19 @@
             <h2 class="text-base font-semibold">My open tasks</h2>
             <a href="{{ route('field.tasks') }}" class="link text-sm">See all</a>
         </div>
-        <div class="card">
-            <x-empty icon="list-todo" title="No open tasks" description="When your coordinator gives you a task, it shows here, even without network." compact />
+        <div class="card divide-y divide-line">
+            @forelse ($tasks as $task)
+                <a href="{{ route('field.task', $task) }}" class="flex items-center gap-3 p-4">
+                    <span class="grid size-10 flex-none place-items-center rounded-xl {{ $task->isOverdue() ? 'bg-bad-soft text-bad' : 'bg-brand-soft text-brand-fg' }}"><x-icon name="list-todo" size="19" /></span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate text-sm font-semibold">{{ $task->title }}</span>
+                        <span class="block text-xs text-subtle">{{ $task->due_on ? ($task->isOverdue() ? 'Overdue since ' : 'Due ').$task->due_on->format('D j M') : $task->typeLabel() }}</span>
+                    </span>
+                    <x-icon name="chevron-right" size="16" class="text-subtle" />
+                </a>
+            @empty
+                <x-empty icon="list-todo" title="No open tasks" description="When your coordinator gives you a task, it shows here, even without network." compact />
+            @endforelse
         </div>
     </section>
 

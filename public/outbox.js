@@ -90,6 +90,15 @@
     return item;
   }
 
+  // A photo for a record in the outbox: sent after the record itself.
+  async function addPhoto(ownerType, ownerUuid, blob, label) {
+    const item = { id: uuid(), type: 'photo', payload: { owner_type: ownerType, owner_uuid: ownerUuid }, blob, label: label || 'Photo', createdAt: Date.now(), status: 'pending', attempts: 0, nextAt: 0, error: null, errors: null };
+    await put(item);
+    await announce();
+    requestBackgroundSync();
+    return item;
+  }
+
   async function remove(id) {
     await run('items', 'readwrite', (store) => store.delete(id));
     return announce();
@@ -133,9 +142,21 @@
     });
   }
 
+  async function sendPhoto(item, csrf) {
+    const data = new FormData();
+    data.append('uuid', item.id);
+    data.append('owner_type', item.payload.owner_type);
+    data.append('owner_uuid', item.payload.owner_uuid);
+    data.append('photo', item.blob, 'photo.jpg');
+    return fetch('/api/field/photos', { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrf }, body: data });
+  }
+
   async function syncNow(force) {
-    const due = (await all()).filter((item) => item.status === 'pending' && (force || item.nextAt <= Date.now()));
-    if (!due.length) {
+    const ready = (await all()).filter((item) => item.status === 'pending' && (force || item.nextAt <= Date.now()));
+    // Records first, their photos after (a photo needs its record on the server).
+    const due = ready.filter((item) => item.type !== 'photo');
+    const photos = ready.filter((item) => item.type === 'photo');
+    if (!due.length && !photos.length) {
       return announce({ sent: 0 });
     }
 
@@ -180,9 +201,27 @@
           }
         }
       }
+
+      for (const item of photos) {
+        const response = await sendPhoto(item, csrf);
+        if (response.status === 401 || response.status === 419) {
+          return announce({ auth: false, sent });
+        }
+        if (response.ok) {
+          await run('items', 'readwrite', (store) => store.delete(item.id));
+          sent += 1;
+        } else if (response.status === 422 || response.status === 403) {
+          const body = await response.json().catch(() => ({}));
+          Object.assign(item, { status: 'failed', error: body.message || 'The server refused this photo.' });
+          await put(item);
+        } else {
+          // 409: its record hasn't synced yet; 5xx: server busy. Try later.
+          await backoff(item, response.status === 409 ? 'Waiting for its record to sync.' : 'Server busy: will retry.');
+        }
+      }
     } catch (error) {
       // No network (or it dropped mid-way): everything left stays queued.
-      await Promise.all(due.map(async (item) => {
+      await Promise.all([...due, ...photos].map(async (item) => {
         const fresh = await get(item.id);
         return fresh && fresh.status === 'pending' ? backoff(fresh, 'No network: will retry.') : null;
       }));
@@ -198,5 +237,5 @@
     return locks ? locks.request('cc-outbox-sync', () => syncNow(force)) : syncNow(force);
   }
 
-  root.ccOutbox = { add, replace, remove, get, all, counts, sync, setRef, getRef, uuid, channel };
+  root.ccOutbox = { add, addPhoto, replace, remove, get, all, counts, sync, setRef, getRef, uuid, channel };
 })(self);
