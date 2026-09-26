@@ -108,14 +108,14 @@
 
         <aside class="space-y-4 xl:sticky xl:top-24 xl:self-start">
             <x-card title="Brief" icon="clipboard-list">
-                <dl class="space-y-3 text-sm">
-                    <div><dt class="text-subtle">Audience</dt><dd class="font-medium">{{ $draft->audience }}</dd><dd class="num text-xs text-muted">{{ number_format($draft->audience_size) }} canvassed</dd></div>
-                    <div class="flex gap-6">
-                        <div><dt class="text-subtle">Channel</dt><dd class="font-medium">{{ $draft->channelLabel() }}</dd></div>
-                        <div><dt class="text-subtle">Language</dt><dd class="font-medium">{{ $draft->languageLabel() }}</dd></div>
-                    </div>
-                    @if ($draft->tone)<div><dt class="text-subtle">Tone</dt><dd class="font-medium">{{ config('messaging.tones.'.$draft->tone) }}</dd></div>@endif
-                    <div><dt class="text-subtle">Requested by</dt><dd class="font-medium">{{ $draft->author?->name ?? 'Unknown' }}</dd><dd class="text-xs text-muted">{{ $draft->created_at->diffForHumans() }}</dd></div>
+                <dl class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="col-span-2"><dt class="text-subtle">Audience</dt><dd class="font-medium">{{ $draft->audience }}</dd><dd class="num text-xs text-muted">{{ number_format($draft->audience_size) }} canvassed</dd></div>
+                    <div><dt class="text-subtle">Channel</dt><dd class="font-medium">{{ $draft->channelLabel() }}</dd></div>
+                    <div><dt class="text-subtle">Language</dt><dd class="font-medium">{{ $draft->languageLabel() }}</dd></div>
+                    @if ($draft->tone)
+                        <div class="col-span-2"><dt class="text-subtle">Tone</dt><dd class="font-medium">{{ config('messaging.tones.'.$draft->tone) }}</dd></div>
+                    @endif
+                    <div class="col-span-2"><dt class="text-subtle">Requested by</dt><dd class="font-medium">{{ $draft->author?->name ?? 'Unknown' }}</dd><dd class="text-xs text-muted">{{ $draft->created_at->diffForHumans() }}</dd></div>
                 </dl>
             </x-card>
             @if ($draft->aiCall)

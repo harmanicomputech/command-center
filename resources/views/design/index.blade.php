@@ -251,7 +251,7 @@
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         @foreach (\App\Services\Badges::ALL as $key => [$name, $description, $icon])
-                            <div class="card flex items-center gap-3 p-3 {{ $loop->index < 2 ? '' : 'opacity-50 grayscale' }}">
+                            <div class="card flex items-center gap-3 p-3 {{ $loop->index < 2 ? '' : 'border-dashed bg-transparent shadow-none' }}">
                                 <span class="grid size-10 flex-none place-items-center rounded-full {{ $loop->index < 2 ? 'bg-accent-soft text-accent-fg' : 'bg-surface-2 text-subtle' }}"><x-icon :name="$icon" /></span>
                                 <span class="min-w-0"><span class="block truncate text-sm font-semibold">{{ $name }}</span><span class="block text-xs leading-tight text-subtle">{{ $description }}</span></span>
                             </div>

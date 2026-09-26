@@ -34,9 +34,9 @@
             @endphp
             <{{ $tag }} @if ($tag === 'a') href="{{ route('areas.lga', $tile['slug']) }}" @endif
                 style="{{ $styles[$keys[0]] }}" x-bind:style="@js($styles)[layer]"
-                class="group relative flex min-w-0 flex-col justify-between overflow-hidden rounded-xl p-2 transition-transform duration-200 sm:p-3 {{ $tag === 'a' ? 'hover:-translate-y-0.5 hover:shadow-raised' : 'opacity-45' }}"
-                title="{{ $tile['name'] }}">
-                <span class="truncate text-[11px] leading-tight font-semibold sm:text-[13px]">{{ $tile['name'] }}</span>
+                class="group relative flex min-w-0 flex-col justify-between overflow-hidden rounded-xl p-2 transition-transform duration-200 sm:p-3 {{ $tag === 'a' ? 'hover:-translate-y-0.5 hover:shadow-raised' : 'cursor-default' }}"
+                title="{{ $tile['name'] }}{{ $tag === 'a' ? '' : ' (outside your area)' }}">
+                <span class="flex min-w-0 items-center gap-1 text-[11px] leading-tight font-semibold sm:text-[13px]"><span class="truncate">{{ $tile['name'] }}</span>@if ($tag !== 'a')<x-icon name="lock" size="11" class="flex-none opacity-80" /><span class="sr-only">, outside your area</span>@endif</span>
                 @foreach ($keys as $key)
                     <span x-show="layer === '{{ $key }}'" @if (! $loop->first) x-cloak @endif class="num text-sm font-bold tracking-tight sm:text-lg">{{ $tile['cells'][$key]['value'] }}</span>
                 @endforeach

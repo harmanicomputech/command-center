@@ -59,7 +59,7 @@
     --border-strong: #d3cfc7;
     --text: #1c1b18;
     --text-muted: #5f5a52;
-    --text-subtle: #767168;
+    --text-subtle: #6e695f;
 
     /* Status: a strong colour for icons and text, a soft background */
     --good: #16794a;
@@ -68,6 +68,7 @@
     --warn-soft: #fcf0d9;
     --bad: #c0262d;
     --bad-soft: #fcebea;
+    --on-bad: #ffffff;
     --info: #2458c6;
     --info-soft: #e8eefb;
 
@@ -91,7 +92,7 @@
     --div-lean: #7cc4a1;
     --div-swing: #e9c46a;
     --div-weakish: #f1a07a;
-    --div-weak: #cf4b3b;
+    --div-weak: #c4453a;
     --div-unknown: #d9d6cf;
     --on-div-strong: #ffffff;
     --on-div-swing: #231800;
@@ -139,7 +140,7 @@
     --border-strong: #3a3935;
     --text: #f1f0ec;
     --text-muted: #aaa69d;
-    --text-subtle: #8f8b82;
+    --text-subtle: #99958c;
 
     --good: #5bd08b;
     --good-soft: rgb(91 208 139 / 0.13);
@@ -147,6 +148,7 @@
     --warn-soft: rgb(243 181 78 / 0.13);
     --bad: #ff7a72;
     --bad-soft: rgb(255 122 114 / 0.13);
+    --on-bad: #1d0403;
     --info: #83a9ff;
     --info-soft: rgb(131 169 255 / 0.13);
 

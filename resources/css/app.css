@@ -350,7 +350,7 @@
 
     .btn-danger {
         background: var(--bad);
-        color: #fff;
+        color: var(--on-bad);
 
         &:hover:not(:disabled) {
             filter: brightness(0.95);

@@ -26,9 +26,9 @@
                     <article class="flex gap-4 p-4 sm:p-5">
                         <div class="min-w-0 flex-1">
                             <p class="text-xs text-subtle">{{ $item->feed?->name }} · <time datetime="{{ $item->published_at->toIso8601String() }}">{{ $item->published_at->diffForHumans() }}</time></p>
-                            <h3 class="mt-1 font-semibold">
+                            <h2 class="mt-1 text-base font-semibold">
                                 @if ($item->link)<a href="{{ $item->link }}" target="_blank" rel="noopener noreferrer" class="hover:text-brand-fg">{{ $item->title }}</a>@else{{ $item->title }}@endif
-                            </h3>
+                            </h2>
                             @if ($item->summary)<p class="mt-1 line-clamp-2 text-sm text-muted">{{ $item->summary }}</p>@endif
                             @if ($item->keywords)
                                 <div class="mt-2 flex flex-wrap gap-1.5">

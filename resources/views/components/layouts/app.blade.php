@@ -92,7 +92,7 @@
                         <x-icon name="moon" x-show="! $store.theme.dark" />
                         <x-icon name="sun" x-show="$store.theme.dark" x-cloak />
                     </button>
-                    <a href="{{ route('account') }}" class="ml-1 lg:hidden" aria-label="My account"><x-avatar :name="$user->name" :size="32" /></a>
+                    <a href="{{ route('account') }}" class="ml-1 lg:hidden"><x-avatar :name="$user->name" :size="32" /><span class="sr-only">My account</span></a>
                 </div>
             </div>
         </header>

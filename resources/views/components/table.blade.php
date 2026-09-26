@@ -10,7 +10,7 @@
             @isset($actions)<div class="flex flex-wrap items-center gap-2">{{ $actions }}</div>@endisset
         </header>
     @endif
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0">
         <table class="table">{{ $slot }}</table>
     </div>
     @isset($footer)

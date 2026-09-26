@@ -19,7 +19,7 @@
                     <h2 class="text-xl font-semibold">{{ $row['lga']->name }}</h2>
                     <p class="num text-sm text-muted">{{ number_format($row['total']) }} reports</p>
                 </div>
-                <div class="table-wrap"><table class="table">
+                <div class="table-wrap" tabindex="0"><table class="table">
                     <thead><tr><th>#</th><th>Issue</th><th class="n">Reports</th><th class="n">Serious</th><th class="n">People</th></tr></thead>
                     <tbody>
                         @foreach ($row['top'] as $i => $issue)

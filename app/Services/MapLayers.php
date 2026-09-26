@@ -121,7 +121,7 @@ class MapLayers
 
         return [
             'color' => Intelligence::ZONES[$zone]['color'],
-            'ink' => $zone === 'unknown' ? 'var(--text)' : "var(--on-div-{$zone})",
+            'ink' => ['stronghold' => 'var(--on-div-strong)', 'swing' => 'var(--on-div-swing)', 'weak' => 'var(--on-div-weak)'][$zone] ?? 'var(--text)',
             'value' => $row['share'] === null ? '—' : rtrim(rtrim(number_format($row['share'], 1), '0'), '.').'%',
             'text' => Intelligence::ZONES[$zone]['label'].($row['share'] === null ? '' : ' · '.$row['share'].'%'),
         ];

@@ -39,8 +39,13 @@ class AggregatesTest extends TestCase
         Aggregates::remember('test', $leader, ['x'], $compute);
         $this->assertSame(2, $runs, 'Another area gets its own figures.');
 
+        $ward->pollingUnits()->delete();
+        $ward->delete();
+        Aggregates::remember('test', $admin, ['x'], $compute);
+        $this->assertSame(3, $runs, 'A deleted record makes the cache stale.');
+
         Aggregates::flush();
         Aggregates::remember('test', $admin, ['x'], $compute);
-        $this->assertSame(3, $runs, 'Flushing recomputes.');
+        $this->assertSame(4, $runs, 'Flushing recomputes.');
     }
 }

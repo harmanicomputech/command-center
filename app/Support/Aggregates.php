@@ -32,7 +32,12 @@ class Aggregates
         $stored = Cache::get($key);
 
         if (is_array($stored) && array_key_exists('v', $stored)) {
-            return self::hydrate($stored['v']);
+            $missing = false;
+            $value = self::hydrate($stored['v'], $missing);
+            // A record was deleted since: recompute rather than show a gap.
+            if (! $missing) {
+                return $value;
+            }
         }
 
         $value = $compute();
@@ -58,13 +63,19 @@ class Aggregates
         };
     }
 
-    private static function hydrate(mixed $value): mixed
+    private static function hydrate(mixed $value, bool &$missing): mixed
     {
         $models = [];
         self::collect($value, $models);
         $loaded = [];
         foreach ($models as $class => $ids) {
             $loaded[$class] = $class::query()->whereKey(array_keys($ids))->get()->keyBy(fn ($model) => $model->getKey())->all();
+        }
+
+        foreach ($models as $class => $ids) {
+            if (count($loaded[$class]) < count($ids)) {
+                $missing = true;
+            }
         }
 
         return self::rebuild($value, $loaded);

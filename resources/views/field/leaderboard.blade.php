@@ -32,9 +32,9 @@
     <h2 class="mt-8 mb-3 text-base font-semibold">My badges</h2>
     <div class="grid grid-cols-2 gap-3">
         @foreach (\App\Services\Badges::ALL as $key => [$name, $description, $icon])
-            <div class="card flex items-center gap-3 p-3 {{ $badges[$key] ? '' : 'opacity-50 grayscale' }}">
+            <div class="card flex items-center gap-3 p-3 {{ $badges[$key] ? '' : 'border-dashed bg-transparent shadow-none' }}">
                 <span class="grid size-10 flex-none place-items-center rounded-full {{ $badges[$key] ? 'bg-accent-soft text-accent-fg' : 'bg-surface-2 text-subtle' }}"><x-icon :name="$icon" /></span>
-                <span class="min-w-0"><span class="block truncate text-sm font-semibold">{{ $name }}</span><span class="block text-xs leading-tight text-subtle">{{ $description }}</span></span>
+                <span class="min-w-0"><span class="block truncate text-sm font-semibold {{ $badges[$key] ? '' : 'text-muted' }}">{{ $name }}@unless ($badges[$key])<span class="sr-only"> (not earned yet)</span>@endunless</span><span class="block text-xs leading-tight text-subtle">{{ $description }}</span></span>
             </div>
         @endforeach
     </div>
