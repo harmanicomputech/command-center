@@ -39,6 +39,9 @@ git -C "$ROOT" ls-files -z --cached --others --exclude-standard \
 (cd "$BUILD/$APP" && php artisan package:discover --ansi >/dev/null)
 
 find "$BUILD/$APP/vendor" -depth -type d \( -name .git -o -name .github \) -exec rm -rf {} +
+# Libraries' own tests, docs and examples (at the package root, never loaded
+# at runtime) keep the zip small enough for control-panel upload limits.
+find "$BUILD/$APP/vendor" -mindepth 3 -maxdepth 3 -type d \( -iname tests -o -name test -o -name docs -o -name doc -o -name examples \) -exec rm -rf {} +
 
 mkdir -p "$BUILD/$APP/storage/"{app/private,framework/{cache/data,sessions,views},logs}
 rm -f "$BUILD/$APP/bootstrap/cache/"*.php
