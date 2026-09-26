@@ -52,6 +52,59 @@ export function registerFieldForms(Alpine) {
         },
     }));
 
+    // A survey, run by an agent with a respondent: one question per screen,
+    // then saved to the outbox and straight on to the next respondent.
+    Alpine.data('surveyRunner', (survey) => ({
+        step: 0,
+        answers: {},
+        about: { gender: '', age_band: '', occupation: '', phone: '' },
+        saved: 0,
+        error: '',
+        get total() {
+            return survey.questions.length;
+        },
+        get question() {
+            return survey.questions[this.step] || null;
+        },
+        get onAbout() {
+            return this.step === this.total;
+        },
+        toggle(questionId, value) {
+            const list = this.answers[questionId] || [];
+            this.answers[questionId] = list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+        },
+        next() {
+            const q = this.question;
+            const value = q ? this.answers[q.id] : null;
+            if (q && q.required && (value === undefined || value === '' || (Array.isArray(value) && !value.length))) {
+                this.error = 'Choose an answer to go on.';
+                return;
+            }
+            this.error = '';
+            this.step++;
+            window.scrollTo({ top: 0 });
+        },
+        back() {
+            this.error = '';
+            this.step = Math.max(0, this.step - 1);
+        },
+        async finish() {
+            if (!box()) {
+                return;
+            }
+            // Plain data: IndexedDB can't store Alpine's reactive proxies.
+            const payload = JSON.parse(JSON.stringify({ survey_id: survey.id, answers: this.answers, ward_id: survey.ward_id, answered_at: new Date().toISOString(), ...this.about }));
+            await box().add('survey_response', payload, `Survey: ${survey.title}`);
+            Alpine.store('outbox').refresh();
+            Alpine.store('outbox').sync();
+            this.saved++;
+            this.step = 0;
+            this.answers = {};
+            this.about = { gender: '', age_band: '', occupation: '', phone: '' };
+            window.scrollTo({ top: 0 });
+        },
+    }));
+
     Alpine.data('issueForm', () => ({
         photo() {
             return photoOf(this.$root);

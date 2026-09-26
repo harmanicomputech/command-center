@@ -48,6 +48,14 @@
         </div>
     </section>
 
+    @if ($surveys->isNotEmpty())
+        <a href="{{ route('field.surveys') }}" class="card card-interactive rise mt-6 flex items-center gap-4 p-4" style="--i: 3">
+            <span class="grid size-11 flex-none place-items-center rounded-xl bg-info-soft text-info"><x-icon name="clipboard-list" /></span>
+            <span class="min-w-0 flex-1"><span class="block font-semibold">{{ $surveys->count() }} {{ $surveys->count() === 1 ? 'survey' : 'surveys' }} running in your ward</span><span class="block text-sm text-muted">+{{ \App\Support\Settings::int('points.survey') }} points for each person you ask</span></span>
+            <x-icon name="chevron-right" class="text-subtle" />
+        </a>
+    @endif
+
     <section class="rise mt-6" style="--i: 3">
         <div class="mb-3 flex items-center justify-between">
             <h2 class="text-base font-semibold">Recently registered</h2>

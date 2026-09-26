@@ -21,7 +21,8 @@ use Illuminate\Support\Collection;
  *  - canvassing: the average support of voters registered by the field
  *    (strong 1, leaning 0.75, undecided 0.5, leaning opponent 0.25,
  *    opponent 0), used once the sample is big enough;
- *  - surveys (phase 6).
+ *  - surveys: the average of voting-intention answers (same scale),
+ *    used once the sample is big enough.
  *
  * Zones: stronghold from 55%, swing from 40%, weak below (Settings);
  * unknown with no source. Priority = registered voters × (1 − certainty) ×
@@ -103,8 +104,9 @@ class Intelligence
         $wards = Ward::query()->with('lga')->orderBy('name')->get();
         $canvass = $this->canvass('ward_id');
         $results = $this->results();
+        $surveys = $this->memo['surveys'] ??= SurveyResults::intentionShares();
 
-        return $wards->map(function (Ward $ward) use ($canvass, $results) {
+        return $wards->map(function (Ward $ward) use ($canvass, $results, $surveys) {
             $wardResult = $results['ward'][$ward->id] ?? null;
             $lgaResult = $results['lga'][$ward->lga_id] ?? null;
 
@@ -114,6 +116,7 @@ class Intelligence
                 $wardResult ?? $lgaResult,
                 $wardResult === null && $lgaResult !== null,
                 $ward->lga->slug,
+                $surveys['ward'][$ward->id] ?? null,
             );
         })->all();
     }
@@ -125,6 +128,7 @@ class Intelligence
     {
         $canvass = $this->canvass('lga_id');
         $results = $this->results();
+        $surveys = $this->memo['surveys'] ??= SurveyResults::intentionShares();
 
         return Lga::query()->orderBy('name')->get()->map(fn (Lga $lga) => $this->row(
             ['id' => $lga->id, 'name' => $lga->name, 'slug' => $lga->slug, 'lga_id' => $lga->id, 'lga' => $lga->name, 'lga_slug' => $lga->slug, 'registered' => $lga->registered_voters],
@@ -132,6 +136,7 @@ class Intelligence
             $results['lga'][$lga->id] ?? null,
             false,
             $lga->slug,
+            $surveys['lga'][$lga->id] ?? null,
         ))->all();
     }
 
@@ -141,10 +146,10 @@ class Intelligence
      * @param  array{share: float, year: int}|null  $result
      * @return array<string, mixed>
      */
-    private function row(array $base, ?array $canvass, ?array $result, bool $resultIsLga, string $lgaSlug): array
+    private function row(array $base, ?array $canvass, ?array $result, bool $resultIsLga, string $lgaSlug, ?array $survey = null): array
     {
         $minSample = max(1, Settings::int('intel.min_sample'));
-        $weights = ['results' => Settings::int('intel.weight_results'), 'canvass' => Settings::int('intel.weight_canvass')];
+        $weights = ['results' => Settings::int('intel.weight_results'), 'canvass' => Settings::int('intel.weight_canvass'), 'survey' => Settings::int('intel.weight_survey')];
         $parts = [];
         $confidence = [];
 
@@ -155,6 +160,10 @@ class Intelligence
         if ($canvass !== null && $canvass['n'] >= $minSample) {
             $parts['canvass'] = $canvass['share'];
             $confidence[] = min(0.6, $canvass['n'] / 500);
+        }
+        if ($survey !== null && $survey['n'] >= $minSample) {
+            $parts['survey'] = $survey['share'];
+            $confidence[] = min(0.5, $survey['n'] / 400);
         }
 
         $totalWeight = array_sum(array_intersect_key($weights, $parts));
@@ -171,6 +180,9 @@ class Intelligence
         } elseif (($canvass['n'] ?? 0) > 0) {
             $basis[] = 'only '.number_format($canvass['n']).' canvassed (under '.$minSample.', not used)';
         }
+        if (isset($parts['survey'])) {
+            $basis[] = number_format($survey['n']).' survey responses';
+        }
         if ($result !== null) {
             $basis[] = 'the '.$result['year'].' result'.($resultIsLga ? ' (LGA figure)' : '');
         }
@@ -185,7 +197,7 @@ class Intelligence
             'share' => $share === null ? null : round($share, 1),
             'zone' => $this->zone($share),
             'sources' => array_keys($parts),
-            'basis' => $basis === [] ? 'No data yet' : 'Based on '.implode(' and ', $basis),
+            'basis' => $basis === [] ? 'No data yet' : 'Based on '.(count($basis) > 2 ? implode(', ', array_slice($basis, 0, -1)).' and '.end($basis) : implode(' and ', $basis)),
             'canvassed' => (int) ($canvass['n'] ?? 0),
             'canvass_share' => isset($canvass['share']) ? round($canvass['share'], 1) : null,
             'results_share' => $result['share'] ?? null,

@@ -17,6 +17,7 @@ use App\Http\Controllers\Console\SearchController;
 use App\Http\Controllers\Console\SegmentController;
 use App\Http\Controllers\Console\SettingsController;
 use App\Http\Controllers\Console\StructureController;
+use App\Http\Controllers\Console\SurveyController;
 use App\Http\Controllers\Console\SystemController;
 use App\Http\Controllers\Console\TaskController;
 use App\Http\Controllers\Console\TeamController;
@@ -25,9 +26,11 @@ use App\Http\Controllers\Console\VoterController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\InviteController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RunnerController;
+use App\Http\Controllers\SurveyPollController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/login', [AuthController::class, 'show'])->name('login');
@@ -37,6 +40,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::view('/offline', 'offline')->name('offline');
 Route::view('/privacy', 'privacy')->name('privacy');
+// Surveys: the public web link, and the Africa's Talking poll callbacks.
+Route::get('/s/{token}', [PublicSurveyController::class, 'show'])->middleware('throttle:60,1')->name('survey.public');
+Route::post('/s/{token}', [PublicSurveyController::class, 'store'])->middleware('throttle:10,1')->name('survey.public.store');
+Route::post('/api/poll/ussd/{token}', [SurveyPollController::class, 'ussd'])->middleware('throttle:300,1')->name('poll.ussd');
+Route::post('/api/poll/sms/{token}', [SurveyPollController::class, 'sms'])->middleware('throttle:300,1')->name('poll.sms');
+
 Route::get('/invite/{token}', [InviteController::class, 'show'])->middleware('throttle:30,1')->name('invite');
 Route::post('/invite/{token}', [InviteController::class, 'accept'])->middleware('throttle:10,1')->name('invite.accept');
 Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('manifest');
@@ -57,6 +66,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/tasks/{task}', [FieldController::class, 'task'])->name('task');
         Route::get('/issues', [FieldController::class, 'issues'])->name('issues');
         Route::get('/leaderboard', [FieldController::class, 'leaderboard'])->name('leaderboard');
+        Route::get('/surveys', [FieldController::class, 'surveys'])->name('surveys');
+        Route::get('/surveys/{survey}', [FieldController::class, 'survey'])->name('survey');
     });
 
     // The Field Force outbox (session auth; the token route gives a fresh CSRF token).
@@ -80,6 +91,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/search', SearchController::class)->middleware('throttle:120,1')->name('search');
 
         Route::get('/brief', [DashboardController::class, 'brief'])->name('brief');
+        Route::get('/surveys', [SurveyController::class, 'index'])->name('surveys');
+        Route::get('/surveys/create', [SurveyController::class, 'create'])->name('surveys.create');
+        Route::post('/surveys', [SurveyController::class, 'store'])->name('surveys.store');
+        Route::get('/surveys/{survey}', [SurveyController::class, 'show'])->name('surveys.show');
+        Route::get('/surveys/{survey}/edit', [SurveyController::class, 'edit'])->name('surveys.edit');
+        Route::put('/surveys/{survey}', [SurveyController::class, 'update'])->name('surveys.update');
+        Route::post('/surveys/{survey}/status', [SurveyController::class, 'status'])->name('surveys.status');
+        Route::post('/surveys/{survey}/ussd', [SurveyController::class, 'ussd'])->name('surveys.ussd');
+        Route::get('/surveys/{survey}/export', [SurveyController::class, 'export'])->middleware('role:admin')->name('surveys.export');
+
         Route::get('/segments', [SegmentController::class, 'index'])->name('segments');
         Route::post('/segments', [SegmentController::class, 'store'])->middleware('role:admin,strategist,lga_leader')->name('segments.store');
         Route::delete('/segments/{segment}', [SegmentController::class, 'destroy'])->middleware('role:admin,strategist,lga_leader')->name('segments.destroy');

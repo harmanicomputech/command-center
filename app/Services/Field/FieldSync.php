@@ -21,6 +21,7 @@ class FieldSync
         'voter' => RegisterVoter::class,
         'task_report' => ReportTask::class,
         'issue' => ReportIssue::class,
+        'survey_response' => AnswerSurvey::class,
     ];
 
     public const MAX_ITEMS = 50;

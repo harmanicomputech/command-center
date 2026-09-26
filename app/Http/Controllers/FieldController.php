@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Issue;
 use App\Models\PollingUnit;
+use App\Models\Survey;
+use App\Models\SurveyResponse;
 use App\Models\Task;
 use App\Models\Voter;
 use App\Models\Ward;
@@ -35,6 +37,7 @@ class FieldController extends Controller
             'stats' => $stats->for($user),
             'target' => Settings::int('target.agent_daily'),
             'recent' => Voter::query()->where('captured_by', $user->id)->latest('captured_at')->limit(3)->get(),
+            'surveys' => Survey::liveInWard($user->ward),
             'tasks' => Task::query()->for($user)->where('status', Task::OPEN)
                 ->with(['reports' => fn ($query) => $query->where('user_id', $user->id)])
                 ->orderByRaw('due_on is null')->orderBy('due_on')->get()
@@ -105,6 +108,7 @@ class FieldController extends Controller
 
         return view('field.tasks', [
             'user' => $user,
+            'surveys' => Survey::liveInWard($user->ward),
             'tasks' => Task::query()->for($user)->with(['reports' => fn ($query) => $query->where('user_id', $user->id)])
                 ->where(fn ($query) => $query->where('status', Task::OPEN)->orWhere('updated_at', '>=', now()->subDays(14)))
                 ->orderByRaw("status = 'closed'")->orderByRaw('due_on is null')->orderBy('due_on')->get(),
@@ -149,6 +153,30 @@ class FieldController extends Controller
             'user' => $user,
             'badges' => $badges->for($user),
         ]);
+    }
+
+    /**
+     * Live surveys for the agent's ward, with the ward's progress against
+     * the quota (full surveys drop off the list).
+     */
+    public function surveys(Request $request): View
+    {
+        $user = $request->user();
+        $surveys = Survey::liveInWard($user->ward);
+        $counts = SurveyResponse::query()->whereIn('survey_id', $surveys->pluck('id'))->where('ward_id', $user->ward_id)
+            ->selectRaw('survey_id, count(*) as n')->groupBy('survey_id')->pluck('n', 'survey_id');
+        $mine = SurveyResponse::query()->whereIn('survey_id', $surveys->pluck('id'))->where('collected_by', $user->id)
+            ->selectRaw('survey_id, count(*) as n')->groupBy('survey_id')->pluck('n', 'survey_id');
+
+        return view('field.surveys', ['surveys' => $surveys, 'counts' => $counts, 'mine' => $mine]);
+    }
+
+    public function survey(Request $request, Survey $survey): View
+    {
+        $user = $request->user();
+        abort_unless(Survey::liveInWard($user->ward)->contains('id', $survey->id), 404);
+
+        return view('field.survey', ['survey' => $survey->load('questions'), 'user' => $user]);
     }
 
     /**

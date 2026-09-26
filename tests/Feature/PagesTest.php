@@ -21,7 +21,7 @@ class PagesTest extends TestCase
     public function test_every_command_center_page_renders_empty_and_with_the_register(): void
     {
         $this->actingAs(User::factory()->admin()->create(['name' => 'Ada Admin']));
-        $pages = ['/', '/brief', '/areas', '/segments', '/results', '/presets', '/tasks', '/issues', '/issues/brief', '/leaderboard', '/people', '/structure', '/influence', '/events', '/voters', '/team', '/notifications', '/users', '/settings', '/system', '/audit', '/design', '/account', '/field', '/field/me', '/field/register', '/field/tasks', '/field/issues', '/field/leaderboard', '/field/outbox', '/field/registrations'];
+        $pages = ['/', '/brief', '/areas', '/segments', '/surveys', '/surveys/create', '/field/surveys', '/results', '/presets', '/tasks', '/issues', '/issues/brief', '/leaderboard', '/people', '/structure', '/influence', '/events', '/voters', '/team', '/notifications', '/users', '/settings', '/system', '/audit', '/design', '/account', '/field', '/field/me', '/field/register', '/field/tasks', '/field/issues', '/field/leaderboard', '/field/outbox', '/field/registrations'];
 
         foreach ($pages as $page) {
             $this->get($page)->assertOk();

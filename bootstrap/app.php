@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(RunBackgroundWork::class);
         $middleware->web(append: [TrackActivity::class]);
         $middleware->alias(['role' => RequireRole::class, 'staff' => RequireStaff::class]);
+        // Africa's Talking callbacks carry a secret in the URL instead of a CSRF token.
+        $middleware->validateCsrfTokens(except: ['api/poll/*']);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));
     })

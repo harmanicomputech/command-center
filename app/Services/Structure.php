@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\UserRole;
 use App\Models\Event;
 use App\Models\Issue;
+use App\Models\SurveyResponse;
 use App\Models\TaskReport;
 use App\Models\User;
 use App\Models\Voter;
@@ -66,7 +67,7 @@ class Structure
     }
 
     /**
-     * Task updates and issue reports.
+     * Task updates, issue reports and survey responses.
      *
      * @param  list<int>  $ids
      * @return list<Collection<int, string>>
@@ -76,6 +77,7 @@ class Structure
         return [
             TaskReport::query()->whereIn('user_id', $ids)->selectRaw('user_id, max(reported_at) as at')->groupBy('user_id')->pluck('at', 'user_id'),
             Issue::query()->whereIn('reported_by', $ids)->selectRaw('reported_by as user_id, max(reported_at) as at')->groupBy('reported_by')->pluck('at', 'user_id'),
+            SurveyResponse::query()->whereIn('collected_by', $ids)->selectRaw('collected_by as user_id, max(answered_at) as at')->groupBy('collected_by')->pluck('at', 'user_id'),
         ];
     }
 

@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Event;
 use App\Models\Issue;
 use App\Models\Lga;
+use App\Models\SurveyResponse;
 use App\Models\TaskReport;
 use App\Models\User;
 use App\Models\Voter;
@@ -21,7 +22,7 @@ use Illuminate\Support\Collection;
  *
  *   verified registration 10 · unverified 3 (invalid and unresolved
  *   duplicates 0) · task done with proof 15 · accepted issue 5 ·
- *   event attended 5 (amounts in Settings → Points)
+ *   event attended 5 · survey response collected 2 (Settings → Points)
  *
  * The weekly board starts Monday 00:00 Lagos time, so it "resets" by itself.
  */
@@ -59,17 +60,21 @@ class Points
         $events = $window($only(Event::query()->join('event_user', 'event_user.event_id', '=', 'events.id')->where('events.status', Event::HELD), 'event_user.user_id'), 'events.starts_at')
             ->selectRaw('event_user.user_id, count(*) as n')->groupBy('event_user.user_id')->pluck('n', 'user_id');
 
+        $surveys = $window($only(SurveyResponse::query()->whereNotNull('collected_by'), 'collected_by'), 'answered_at')
+            ->selectRaw('collected_by as user_id, count(*) as n')->groupBy('collected_by')->pluck('n', 'user_id');
+
         $value = [
             'verified' => Settings::int('points.registration_verified'),
             'unverified' => Settings::int('points.registration_unverified'),
             'task' => Settings::int('points.task'),
             'issue' => Settings::int('points.issue'),
             'event' => Settings::int('points.event'),
+            'survey' => Settings::int('points.survey'),
         ];
 
-        $ids = collect([$registrations->keys(), $tasks->keys(), $issues->keys(), $events->keys()])->flatten()->unique();
+        $ids = collect([$registrations->keys(), $tasks->keys(), $issues->keys(), $events->keys(), $surveys->keys()])->flatten()->unique();
 
-        return $ids->mapWithKeys(function ($id) use ($registrations, $tasks, $issues, $events, $value) {
+        return $ids->mapWithKeys(function ($id) use ($registrations, $tasks, $issues, $events, $surveys, $value) {
             $all = (int) ($registrations[$id]->n ?? 0);
             $verified = (int) ($registrations[$id]->verified ?? 0);
             $row = [
@@ -78,9 +83,10 @@ class Points
                 'tasks' => (int) ($tasks[$id] ?? 0),
                 'issues' => (int) ($issues[$id] ?? 0),
                 'events' => (int) ($events[$id] ?? 0),
+                'surveys' => (int) ($surveys[$id] ?? 0),
             ];
             $row['points'] = $verified * $value['verified'] + ($all - $verified) * $value['unverified']
-                + $row['tasks'] * $value['task'] + $row['issues'] * $value['issue'] + $row['events'] * $value['event'];
+                + $row['tasks'] * $value['task'] + $row['issues'] * $value['issue'] + $row['events'] * $value['event'] + $row['surveys'] * $value['survey'];
 
             return [(int) $id => $row];
         });
@@ -99,7 +105,7 @@ class Points
             ->with('ward')->get()->keyBy('id');
 
         $totals = $this->totals($agents->keys()->all(), $since);
-        $empty = ['points' => 0, 'registrations' => 0, 'verified' => 0, 'tasks' => 0, 'issues' => 0, 'events' => 0];
+        $empty = ['points' => 0, 'registrations' => 0, 'verified' => 0, 'tasks' => 0, 'issues' => 0, 'events' => 0, 'surveys' => 0];
 
         return $this->rank($agents->map(fn (User $agent) => ['user' => $agent, ...($totals[$agent->id] ?? $empty)])
             ->sortBy([['points', 'desc'], ['registrations', 'desc'], [fn ($row) => $row['user']->name, 'asc']])->values());
