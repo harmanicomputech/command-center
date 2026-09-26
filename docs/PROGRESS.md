@@ -4,6 +4,35 @@ The build brief is [`docs/HANDOFF.md`](HANDOFF.md). This file is updated at the 
 
 **Working branch:** `claude/confident-newton-e91rbz`
 
+## Status: paused for a live test (26 Sep 2026)
+
+Phases 1–7 are built, tested (89 automated tests) and pushed. Development is **paused at the start of phase 8** at the owner's request, so the app can be deployed and tried on a live DirectAdmin server. The owner will bring feedback; work resumes with that feedback, then phase 8.
+
+**Deployed for the live test:** `command-center-shared-hosting.zip` (first install; its `.env` has placeholder secrets that are generated on the first visit) and `command-center-shared-hosting-update.zip`, built from the commit that added this note. Follow [`docs/DEPLOY-SHARED-HOSTING.md`](DEPLOY-SHARED-HOSTING.md).
+
+**What to try on the live server** (and report back on):
+1. Install: database, `.env`, the first admin with the setup key, the register loading, **System → Update database** saying up to date.
+2. Background work: the pinger at cron-job.org, and **System → Background work** showing *Running*.
+3. Sign-in for staff (email + password) and agents (phone + PIN); installing the app on an Android phone and an iPhone.
+4. Field Force on a phone: register a voter, report an issue with a photo, report "what people are saying", run a survey, **with mobile data off**, then back on (the sync pill should clear).
+5. Command Center: dashboard, map and wards, segments, people, structure, tasks, issues, leaderboard, surveys, narratives, complaints.
+6. Web Push: **System → Set up notifications**, then turn them on under **Notifications** and send a test.
+7. Optional, if keys are ready: the Claude key (draft a message) and Africa's Talking (a small SMS broadcast to your own number, then reply STOP).
+8. Anything slow, confusing, broken, or not matching the campaign's look.
+
+## What's left to finish the app
+
+- **Phase 8, hardening** (not started):
+  - Lighthouse and accessibility pass (target: Performance ≥ 90 on mobile, Accessibility ≥ 95, PWA installable), including WCAG AA contrast and focus checks on every screen.
+  - Load test with 500,000 voter rows: add indexes, paginate, cache aggregates (dashboard, map, segments, leaderboards) where pages get slow. Ideally measured on MySQL as well as SQLite.
+  - Backups: an **encrypted** zip download (AES, admin-chosen password; no passwords or tokens), reusing Election Shield's `DataMaintenance::backup()`, audited.
+  - "Delete my data": a request form on the privacy page (verified by the team by phone before erasing), an SMS "DELETE" keyword (the sender's number proves it's theirs), and an admin **Erase** on a voter. Erasure clears personal fields and keeps anonymous counts.
+  - The retention switch: erase voter personal data automatically after the election (setting, default 90 days after 6 Feb 2027, i.e. 7 May 2027), with the date shown on System and Settings.
+  - Build the final zips and write the final summary here.
+- **Feedback from the live test** (to be added here).
+- **Owner decisions** below, still on placeholders.
+
+
 ## Phases
 
 | # | Phase | Status | Built | Left |
@@ -15,7 +44,7 @@ The build brief is [`docs/HANDOFF.md`](HANDOFF.md). This file is updated at the 
 | 5 | Voter intelligence and the daily dashboard | ✅ Done | Past-results importer (CSV lga,ward,party,votes per year; unmatched names reported, never guessed); zone classification per ward and LGA blending past results, canvass support and (phase 6) surveys with Settings weights, a minimum sample, and "based on …" explanations; certainty, reachability presets per LGA (Izzi/Ikwo priority mobilisation, Abakaliki urban digital and media — editable) and priority scores; week-on-week trend; Map & wards with zone cards, an LGA table and a sortable ward table; ward profile with zone, segments (support, age, occupation) and top issues; segment explorer (counts only) with saved segments; the daily dashboard (winning / losing / push next, field activity, map with zone / registrations / activity / issues layers, priority wards, leaderboard highlights) and a printable one-page brief; Web Push (reused from Election Shield) with topics, deferred sending, the 7 AM "daily brief is ready" and quiet-ward alerts, new-task and security-issue alerts; the ward-boundary map as an upload | The real ward boundaries (decision 13); the AI "push next" suggestion (phase 7) |
 | 6 | Surveys | ✅ Done | Survey builder (single and multiple choice, rating, short text, "which issue matters most", voting intention), LGA targeting and a quota per ward, launch/close (questions change only in drafts); agents run surveys **offline** one question per screen and go straight to the next respondent (quota-full surveys drop off their list); a public web link (honeypot, one answer per phone and per browser); USSD polls replayed from the full input history, END-only writes, screens under 182 characters; SMS polls ("PULSE 2"); results with n on every figure, small samples (n < 30) faded and marked, breakdowns by LGA, ward, age, occupation and gender, quota progress, an anonymous CSV export (admin, audited); voting-intention answers feed the zone engine as its third source; responses earn 2 points and count as activity | Sending SMS invitations to answer arrives with broadcasts (phase 7) |
 | 7 | AI messaging and media | ✅ Done | **Messages:** pick a segment (or a saved one), a goal, a channel (SMS 160, WhatsApp, radio script, town-hall points, flyer), a language (English, Igbo, both) and a tone; Claude (official Anthropic PHP SDK, `claude-opus-5`, adaptive thinking, structured output, server-side refusal fallback) drafts three versions in the background while the page waits; an editor edits and approves one, saved with their name and audited. **Policy brief** knowledge base by topic, in a cached system prompt (the stable prefix is deterministic). **No personal data in prompts:** segment descriptions and counts, issue counts per category and community, and a scrubber that removes phone numbers and emails from typed text. Every AI call logged with tokens, cache hits and cost; a monthly budget stops drafting; spend on **System** and **Messages**. **SMS broadcasts** (Election Shield's Audience / BroadcastDispatcher / SmsSender / SendBroadcastBatch adapted) to a voter segment or the team, with a live count, GSM/Unicode part count and naira cost preview, a confirmed and audited send, one message per number, STOP opt-outs (inbound STOP, AT opt-out callback, stored as keyed hashes), delivery reports, approved SMS drafts straight to a broadcast. **Narratives:** agents report what people are saying from the field app (offline, with a screenshot), the media team adds reports on the web; an inbox to group them into narratives by hand or from AI grouping suggestions a person accepts; trend lines, status (new, watching, responding, closed), "spiking" push alerts, "Draft a response". **Complaints** dashboard (issues + negative narratives by theme and LGA, rising themes). **News tracker** (RSS/Atom feeds admins list, keyword alerts with a push notification, every 30 minutes from the background runner). **Our pages** (posts and engagement, typed or CSV import). The daily AI **"push next"** suggestion at 06:30 Lagos on the dashboard and brief | Facebook Graph API for the page's own insights (decision 17); WhatsApp broadcasts need a verified Meta business and approved templates (decision 18) |
-| 8 | Hardening | ⚪ Next | — | — |
+| 8 | Hardening | ⏸ Paused before starting (live test first) | — | See “What's left” above |
 
 ### Phase 1 notes
 
@@ -93,6 +122,7 @@ Everything below has a working placeholder, so nothing is blocked. Change it whe
 
 | Phase | Full install | Update | Where |
 | --- | --- | --- | --- |
+| 7 (live test) | `command-center-shared-hosting.zip` | `command-center-shared-hosting-update.zip` | Built in `dist/` and sent to the owner in the session for the DirectAdmin test. The full zip's `.env` has placeholders: `APP_KEY` and the setup key are generated on the first visit (read `ADMIN_PASSWORD` from `command-center/.env` in File Manager afterwards). |
 | 5 | `command-center-shared-hosting.zip` | `command-center-shared-hosting-update.zip` | Built locally in `dist/` at the end of phase 5 (see the note on phase 2: the session's container is temporary, and GitHub Actions isn't running jobs yet). Existing installs: upload the update zip, then **System → Update database**. |
 | 2 | `command-center-shared-hosting.zip` | `command-center-shared-hosting-update.zip` | Built locally in `dist/` at the end of phase 2 (27 MB each; the session's container is temporary). Once GitHub Actions runs (decision 11), download both from the CI artifact, or build them with `scripts/build-shared-hosting.sh` on any computer with PHP, Composer and Node. Existing installs: upload the update zip, then **System → Update database**. |
 | 1 | `command-center-shared-hosting.zip` | `command-center-shared-hosting-update.zip` | GitHub → **Actions** → the latest green **CI** run on this branch → **Artifacts** → `command-center-upload-packages` (kept 90 days). The full zip from CI has placeholder secrets that the app fills in on its first visit; read the setup key from `command-center/.env` afterwards. Also built locally with `scripts/build-shared-hosting.sh` (27 MB each). |
