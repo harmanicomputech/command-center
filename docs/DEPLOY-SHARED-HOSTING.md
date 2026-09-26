@@ -58,6 +58,12 @@ Under **Users**, add LGA leaders and ward coordinators (email and password) and 
 - In the Africa's Talking dashboard, set the three callback URLs shown under Connections (delivery reports, bulk-SMS opt-out, incoming messages), so delivery and STOP replies come back.
 - AI drafts run from the background work, so keep the pinger (step 5) running.
 
+## 8. Backups and privacy
+
+- **Backups:** use the host's own database backups (DirectAdmin → Create/Restore Backups), and from time to time **System → Backup** (an encrypted zip of every table, with a password you choose; it isn't stored). Keep a copy of `APP_KEY` from `.env` somewhere safe: phone numbers in the database and the backup are encrypted with it.
+- **Delete-my-data requests** from the privacy page appear under **Data requests**: call the number to confirm it's them, then erase. An SMS reply "DELETE" erases at once (the number proves it).
+- **Retention:** voter personal data is erased automatically 90 days after the election (change or switch off in **Settings → Privacy**).
+
 ## Updating
 
 Upload `command-center-shared-hosting-update.zip` (it has no `.env`, so your settings are kept), extract it over the old files, then press **System → Update database**. Each build gives the service worker a new version, so phones pick up the release on their next visit.

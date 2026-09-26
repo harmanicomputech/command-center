@@ -4,11 +4,11 @@ The build brief is [`docs/HANDOFF.md`](HANDOFF.md). This file is updated at the 
 
 **Working branch:** `claude/confident-newton-e91rbz`
 
-## Status: paused for a live test (26 Sep 2026)
+## Status: all 8 phases built (26 Sep 2026); waiting for live-test feedback
 
-Phases 1–7 are built, tested (89 automated tests) and pushed. Development is **paused at the start of phase 8** at the owner's request, so the app can be deployed and tried on a live DirectAdmin server. The owner will bring feedback; work resumes with that feedback, then phase 8.
+Every phase in the brief's build order is built, tested (94 automated tests) and pushed. The owner is testing on a live DirectAdmin server; their feedback is the next piece of work. The final summary is at the end of this file.
 
-**Deployed for the live test:** `command-center-shared-hosting.zip` (first install; its `.env` has placeholder secrets that are generated on the first visit) and `command-center-shared-hosting-update.zip`, built from the commit that added this note. Follow [`docs/DEPLOY-SHARED-HOSTING.md`](DEPLOY-SHARED-HOSTING.md).
+**Upload packages:** `command-center-shared-hosting.zip` (first install) and `command-center-shared-hosting-update.zip` (updates), built at the end of phase 8 (see *Upload packages*). Follow [`docs/DEPLOY-SHARED-HOSTING.md`](DEPLOY-SHARED-HOSTING.md). If you installed the phase 7 test zip, upload the new **update** zip and press **System → Update database** (phase 8 adds one table).
 
 **What to try on the live server** (and report back on):
 1. Install: database, `.env`, the first admin with the setup key, the register loading, **System → Update database** saying up to date.
@@ -17,21 +17,15 @@ Phases 1–7 are built, tested (89 automated tests) and pushed. Development is *
 4. Field Force on a phone: register a voter, report an issue with a photo, report "what people are saying", run a survey, **with mobile data off**, then back on (the sync pill should clear).
 5. Command Center: dashboard, map and wards, segments, people, structure, tasks, issues, leaderboard, surveys, narratives, complaints.
 6. Web Push: **System → Set up notifications**, then turn them on under **Notifications** and send a test.
-7. Optional, if keys are ready: the Claude key (draft a message) and Africa's Talking (a small SMS broadcast to your own number, then reply STOP).
-8. Anything slow, confusing, broken, or not matching the campaign's look.
+7. Optional, if keys are ready: the Claude key (draft a message) and Africa's Talking (a small SMS broadcast to your own number, then reply STOP, or DELETE).
+8. **System → Backup:** download one with a password and open it.
+9. Anything slow, confusing, broken, or not matching the campaign's look.
 
-## What's left to finish the app
+## What's left
 
-- **Phase 8, hardening** (not started):
-  - Lighthouse and accessibility pass (target: Performance ≥ 90 on mobile, Accessibility ≥ 95, PWA installable), including WCAG AA contrast and focus checks on every screen.
-  - Load test with 500,000 voter rows: add indexes, paginate, cache aggregates (dashboard, map, segments, leaderboards) where pages get slow. Ideally measured on MySQL as well as SQLite.
-  - Backups: an **encrypted** zip download (AES, admin-chosen password; no passwords or tokens), reusing Election Shield's `DataMaintenance::backup()`, audited.
-  - "Delete my data": a request form on the privacy page (verified by the team by phone before erasing), an SMS "DELETE" keyword (the sender's number proves it's theirs), and an admin **Erase** on a voter. Erasure clears personal fields and keeps anonymous counts.
-  - The retention switch: erase voter personal data automatically after the election (setting, default 90 days after 6 Feb 2027, i.e. 7 May 2027), with the date shown on System and Settings.
-  - Build the final zips and write the final summary here.
 - **Feedback from the live test** (to be added here).
 - **Owner decisions** below, still on placeholders.
-
+- Not verified here and worth watching on the live server: page speed on the host's **MySQL** (the load test used SQLite), Claude and Africa's Talking with real keys, and the host's PHP time limit for AI drafts.
 
 ## Phases
 
@@ -44,7 +38,7 @@ Phases 1–7 are built, tested (89 automated tests) and pushed. Development is *
 | 5 | Voter intelligence and the daily dashboard | ✅ Done | Past-results importer (CSV lga,ward,party,votes per year; unmatched names reported, never guessed); zone classification per ward and LGA blending past results, canvass support and (phase 6) surveys with Settings weights, a minimum sample, and "based on …" explanations; certainty, reachability presets per LGA (Izzi/Ikwo priority mobilisation, Abakaliki urban digital and media — editable) and priority scores; week-on-week trend; Map & wards with zone cards, an LGA table and a sortable ward table; ward profile with zone, segments (support, age, occupation) and top issues; segment explorer (counts only) with saved segments; the daily dashboard (winning / losing / push next, field activity, map with zone / registrations / activity / issues layers, priority wards, leaderboard highlights) and a printable one-page brief; Web Push (reused from Election Shield) with topics, deferred sending, the 7 AM "daily brief is ready" and quiet-ward alerts, new-task and security-issue alerts; the ward-boundary map as an upload | The real ward boundaries (decision 13); the AI "push next" suggestion (phase 7) |
 | 6 | Surveys | ✅ Done | Survey builder (single and multiple choice, rating, short text, "which issue matters most", voting intention), LGA targeting and a quota per ward, launch/close (questions change only in drafts); agents run surveys **offline** one question per screen and go straight to the next respondent (quota-full surveys drop off their list); a public web link (honeypot, one answer per phone and per browser); USSD polls replayed from the full input history, END-only writes, screens under 182 characters; SMS polls ("PULSE 2"); results with n on every figure, small samples (n < 30) faded and marked, breakdowns by LGA, ward, age, occupation and gender, quota progress, an anonymous CSV export (admin, audited); voting-intention answers feed the zone engine as its third source; responses earn 2 points and count as activity | Sending SMS invitations to answer arrives with broadcasts (phase 7) |
 | 7 | AI messaging and media | ✅ Done | **Messages:** pick a segment (or a saved one), a goal, a channel (SMS 160, WhatsApp, radio script, town-hall points, flyer), a language (English, Igbo, both) and a tone; Claude (official Anthropic PHP SDK, `claude-opus-5`, adaptive thinking, structured output, server-side refusal fallback) drafts three versions in the background while the page waits; an editor edits and approves one, saved with their name and audited. **Policy brief** knowledge base by topic, in a cached system prompt (the stable prefix is deterministic). **No personal data in prompts:** segment descriptions and counts, issue counts per category and community, and a scrubber that removes phone numbers and emails from typed text. Every AI call logged with tokens, cache hits and cost; a monthly budget stops drafting; spend on **System** and **Messages**. **SMS broadcasts** (Election Shield's Audience / BroadcastDispatcher / SmsSender / SendBroadcastBatch adapted) to a voter segment or the team, with a live count, GSM/Unicode part count and naira cost preview, a confirmed and audited send, one message per number, STOP opt-outs (inbound STOP, AT opt-out callback, stored as keyed hashes), delivery reports, approved SMS drafts straight to a broadcast. **Narratives:** agents report what people are saying from the field app (offline, with a screenshot), the media team adds reports on the web; an inbox to group them into narratives by hand or from AI grouping suggestions a person accepts; trend lines, status (new, watching, responding, closed), "spiking" push alerts, "Draft a response". **Complaints** dashboard (issues + negative narratives by theme and LGA, rising themes). **News tracker** (RSS/Atom feeds admins list, keyword alerts with a push notification, every 30 minutes from the background runner). **Our pages** (posts and engagement, typed or CSV import). The daily AI **"push next"** suggestion at 06:30 Lagos on the dashboard and brief | Facebook Graph API for the page's own insights (decision 17); WhatsApp broadcasts need a verified Meta business and approved templates (decision 18) |
-| 8 | Hardening | ⏸ Paused before starting (live test first) | — | See “What's left” above |
+| 8 | Hardening | ✅ Done | **Load test** with 500,000 voters, 20,000 issues and 5,000 narrative reports: per-day counts grouped in SQL, and the heavy figures (zones, segment and audience counts, ward health, points, map layers, the brief) cached for five minutes per viewer area and warmed by the runner; the dashboard went from 8.0 s to 0.03 s warm (2–4 s at most once per five minutes cold, on SQLite), the field app stays under 0.4 s. **Accessibility:** axe-core finds no WCAG 2 A/AA violations on any page, light and dark, for admin, LGA leader and agent; Lighthouse mobile (with gzip, as on the host) 98–100 performance and 100 accessibility. **Data protection:** delete-my-data from the privacy page (called back before erasing), by SMS "DELETE", or by staff; erasure clears personal fields, keeps anonymous counts and blocks further SMS; the retention switch erases voter personal data in batches after the election (default 90 days, 7 May 2027); an AES-256 encrypted backup download without passwords, tokens or keys | — |
 
 ### Phase 1 notes
 
@@ -93,6 +87,13 @@ Phases 1–7 are built, tested (89 automated tests) and pushed. Development is *
 - **Model and cost:** `claude-opus-5` ($5 / $25 per million tokens; cache reads at 10 %). A typical SMS draft is a few thousand input tokens (most from cache) and under a thousand output tokens: about 2–3 US cents. Set `ANTHROPIC_MODEL` in `.env` to change the model.
 - **SMS cost** in the preview is a placeholder ₦4 per part (Settings → Messaging and AI). Igbo letters switch SMS to Unicode (70 characters per part), which the counters show.
 
+### Phase 8 notes
+
+- **Tests:** 94 in all (5 new): a web deletion request checked before erasing, with counts kept and the number opted out; SMS DELETE and admin erase; the retention date, batches and switch-off; the encrypted backup (unreadable without the password, no password column); the aggregate cache (plain data only, per area, flush, recompute when a record is gone).
+- **Load test** (500k voters on SQLite, in a copy of the database, never committed): before, dashboard 8.0 s, brief 6.4 s, segments 2.1 s, broadcast preview 1.8 s; after, 0.02–0.04 s warm. The cache holds only plain data (models as id references), so Laravel's protection against unserializing objects from the cache stays on.
+- **Lighthouse** was run behind a small gzip proxy, because `artisan serve` doesn't compress; the host does (`deploy/shared-hosting/.htaccess`). Lighthouse 13 has no PWA category any more; the manifest, icons and service worker are unchanged since phase 1.
+- **Checked in the browser:** Data requests, the privacy page's deletion form, System (Backup, Privacy) and the LGA leader's map at 360/768/1280, light and dark.
+
 ## Decisions waiting for the owner
 
 Everything below has a working placeholder, so nothing is blocked. Change it when you decide.
@@ -109,6 +110,7 @@ Everything below has a working placeholder, so nothing is blocked. Change it whe
 | 8 | Africa's Talking account, sender ID, SMS price; a USSD code or shortcode for polls | None (broadcasts can be drafted, not sent); ₦4 per SMS part in the preview; "Reply STOP to opt out" footer | Keys and sender ID: **System → Connections**; callback URLs there too; price and footer: **Settings → Messaging and AI**; poll URLs on each survey's page |
 | 9 | Rewards policy for top mobilisers | None | Phase 4 |
 | 10 | NDPC data-controller registration and a data protection officer | Not named (recommended before registering voters) | **Settings → Privacy** (shown on `/privacy`) |
+| 19 | How long to keep voter personal data after the election | 90 days (erased from 7 May 2027); anonymous counts kept | **Settings → Privacy** (0 switches it off) |
 | 11 | **GitHub Actions doesn't start jobs on this repository** (the CI run got no runner and no logs, usually because Actions is disabled or blocked by billing or a spending limit) | Zips are built locally with the script | Repository **Settings → Actions**, and the account's billing. Then re-run CI: the zips appear as its artifact |
 | 13 | **Ward boundaries** for the real ward map: allow `services3.arcgis.com` in the build environment's network settings, or download GRID3's Nigeria ward boundaries (CC BY 4.0) and upload them | LGA tile map | **System → Ward map** |
 | 14 | Zone thresholds and source weights | Stronghold 55%+, swing 40–55%, weak under 40%; results 50 / canvass 35 / surveys 15; minimum sample 30 | **Settings → Voter intelligence** |
@@ -122,9 +124,22 @@ Everything below has a working placeholder, so nothing is blocked. Change it whe
 
 | Phase | Full install | Update | Where |
 | --- | --- | --- | --- |
+| 8 | `command-center-shared-hosting.zip` | `command-center-shared-hosting-update.zip` | Built in `dist/` at the end of phase 8 and sent to the owner in the session (the session's container is temporary). Full zip: placeholder secrets filled on the first visit. |
 | 7 (live test) | `command-center-shared-hosting.zip` | `command-center-shared-hosting-update.zip` | Built in `dist/` (22 MB each, after dropping the libraries' own tests and docs) and sent to the owner in the session for the DirectAdmin test; smoke-tested as a fresh install. The full zip's `.env` has placeholders: `APP_KEY` and the setup key are generated on the first visit (read `ADMIN_PASSWORD` from `command-center/.env` in File Manager afterwards). |
 | 5 | `command-center-shared-hosting.zip` | `command-center-shared-hosting-update.zip` | Built locally in `dist/` at the end of phase 5 (see the note on phase 2: the session's container is temporary, and GitHub Actions isn't running jobs yet). Existing installs: upload the update zip, then **System → Update database**. |
 | 2 | `command-center-shared-hosting.zip` | `command-center-shared-hosting-update.zip` | Built locally in `dist/` at the end of phase 2 (27 MB each; the session's container is temporary). Once GitHub Actions runs (decision 11), download both from the CI artifact, or build them with `scripts/build-shared-hosting.sh` on any computer with PHP, Composer and Node. Existing installs: upload the update zip, then **System → Update database**. |
 | 1 | `command-center-shared-hosting.zip` | `command-center-shared-hosting-update.zip` | GitHub → **Actions** → the latest green **CI** run on this branch → **Artifacts** → `command-center-upload-packages` (kept 90 days). The full zip from CI has placeholder secrets that the app fills in on its first visit; read the setup key from `command-center/.env` afterwards. Also built locally with `scripts/build-shared-hosting.sh` (27 MB each). |
 
 Deployment steps: [`docs/DEPLOY-SHARED-HOSTING.md`](DEPLOY-SHARED-HOSTING.md).
+
+## Final summary
+
+**What the campaign has:** one Laravel 13 PWA with two faces, deployable to DirectAdmin shared hosting with no terminal and no per-minute cron.
+
+- **Command Center** (leadership, desktop first): the daily dashboard and printable brief, Map & wards with zones, certainty and priority, segments, surveys, influence notes, past results, people and structure health, team invites, registrations with verification, tasks, issues and the briefing pack, events, leaderboards, AI message drafting from the policy brief with human approval, SMS broadcasts with opt-outs and delivery reports, narratives and complaints, the news tracker, our own pages, and admin (users, settings, system, audit log, data requests, the `/design` style guide).
+- **Field Force** (agents, phone first, offline first): voter registration, tasks, issues with photos, "what people are saying" reports, surveys, leaderboard and badges, all queued in IndexedDB and synced when there's network.
+- **Built to last the campaign:** five roles scoped to their area on the server; phones encrypted with a keyed hash; consent with a text version; exports and sensitive actions audited; delete-my-data and a retention switch; an encrypted backup; fast with 500,000 voters; WCAG AA; light and dark themes from one token file.
+
+**How it was checked:** 94 automated tests (`php artisan test`), `pint --test`, screenshots of every screen at 360/768/1280 in light and dark with overflow and script-error checks, offline flows run end to end in Chromium, axe-core and Lighthouse, a 500k-voter load test, and a fresh install from the upload zip.
+
+**Next:** the owner's live-test feedback, then the decisions above (party colours and name, candidate, targets, API keys and budgets, SMS sender ID and price, past results, ward boundaries, news feeds, retention period).
