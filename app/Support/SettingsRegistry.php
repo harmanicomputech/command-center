@@ -24,6 +24,18 @@ class SettingsRegistry
                     'campaign.party' => ['label' => 'Party', 'type' => 'text', 'default' => '', 'help' => 'The party code on the ballot, e.g. APC. Our share in past results is this party’s.'],
                 ],
             ],
+            'intelligence' => [
+                'title' => 'Voter intelligence',
+                'description' => 'How “our share” blends its sources, and where the zone lines are. Sources with no data are left out and the others re-weighted.',
+                'fields' => [
+                    'intel.weight_results' => ['label' => 'Weight: past results', 'type' => 'int', 'default' => '50', 'min' => 0, 'max' => 100, 'suffix' => '%'],
+                    'intel.weight_canvass' => ['label' => 'Weight: canvassing', 'type' => 'int', 'default' => '35', 'min' => 0, 'max' => 100, 'suffix' => '%'],
+                    'intel.weight_survey' => ['label' => 'Weight: surveys', 'type' => 'int', 'default' => '15', 'min' => 0, 'max' => 100, 'suffix' => '%'],
+                    'intel.min_sample' => ['label' => 'Smallest canvass or survey sample to use', 'type' => 'int', 'default' => '30', 'min' => 1, 'max' => 10000, 'suffix' => 'people', 'help' => 'Below this, a ward’s canvassing or survey figure is left out of its share.'],
+                    'intel.stronghold' => ['label' => 'Stronghold from', 'type' => 'int', 'default' => '55', 'min' => 1, 'max' => 100, 'suffix' => '%'],
+                    'intel.swing' => ['label' => 'Swing from', 'type' => 'int', 'default' => '40', 'min' => 1, 'max' => 100, 'suffix' => '%', 'help' => 'Below this is weak.'],
+                ],
+            ],
             'privacy' => [
                 'title' => 'Privacy',
                 'description' => 'Shown on the public privacy notice linked from the registration form.',

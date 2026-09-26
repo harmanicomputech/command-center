@@ -12,7 +12,7 @@
  */
 importScripts('/outbox.js');
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 const SHELL = `cc-shell-${VERSION}`;
 const PAGES = 'cc-pages';
 const SHELL_FILES = [
@@ -126,4 +126,40 @@ self.addEventListener('sync', (event) => {
       }
     }));
   }
+});
+
+// Web Push: the daily brief, new tasks, quiet wards, security issues.
+self.addEventListener('push', (event) => {
+  let message = { title: 'Command Center', body: 'Something needs your attention.', url: '/' };
+  try {
+    message = { ...message, ...event.data.json() };
+  } catch (error) {
+    // No or unreadable payload: show the generic alert.
+  }
+
+  event.waitUntil(self.registration.showNotification(message.title, {
+    body: message.body,
+    tag: message.tag,
+    renotify: Boolean(message.tag),
+    requireInteraction: Boolean(message.urgent),
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-32.png',
+    data: { url: message.url || '/' },
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || '/', self.location.origin).href;
+
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows) {
+      if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
+        await client.focus();
+        return client.navigate ? client.navigate(target) : undefined;
+      }
+    }
+    return self.clients.openWindow(target);
+  })());
 });

@@ -6,11 +6,13 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\Influencer;
+use App\Models\Issue;
 use App\Models\Lga;
 use App\Models\User;
 use App\Models\Voter;
 use App\Models\Ward;
-use App\Services\LgaMap;
+use App\Services\Intelligence;
+use App\Services\MapLayers;
 use App\Services\Structure;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,26 +23,27 @@ use Illuminate\View\View;
  */
 class AreaController extends Controller
 {
-    public function index(Request $request, LgaMap $map): View
+    public function index(Request $request, Intelligence $intel, MapLayers $layers): View
     {
         $user = $request->user();
-        $lgas = Lga::query()->visibleTo($user)->orderBy('name')->get();
-        $all = Lga::query()->get();
-        $coordinators = $this->coordinatorsPerLga();
+        $zone = array_key_exists((string) $request->query('zone'), Intelligence::ZONES) ? $request->query('zone') : null;
+        $lga = $request->filled('lga') ? Lga::query()->visibleTo($user)->where('slug', $request->query('lga'))->first() : null;
+        $sort = in_array($request->query('sort'), ['priority', 'share', 'registered', 'canvassed', 'name'], true) ? $request->query('sort') : 'priority';
+
+        $all = $intel->wards($user, $lga?->id);
+        $wards = $all->when($zone, fn ($rows) => $rows->where('zone', $zone))
+            ->sortBy(fn ($row) => $sort === 'name' ? $row['name'] : -($row[$sort] ?? -1))->values();
 
         return view('areas.index', [
-            'lgas' => $lgas,
-            'coordinators' => $coordinators,
-            'maxRegistered' => max(1, (int) $lgas->max('registered_voters')),
-            'map' => $map->build($user, [
-                'registered' => ['label' => 'Registered voters', 'values' => $all->pluck('registered_voters', 'name')->all(), 'format' => 'compact'],
-                'wards' => ['label' => 'Wards', 'values' => $all->pluck('wards_count', 'name')->all()],
-            ]),
-            'totals' => [
-                'registered' => (int) $lgas->sum('registered_voters'),
-                'wards' => (int) $lgas->sum('wards_count'),
-                'units' => (int) $lgas->sum('polling_units_count'),
-            ],
+            'wards' => $wards,
+            'zoneCounts' => $all->countBy('zone'),
+            'zone' => $zone,
+            'lga' => $lga,
+            'sort' => $sort,
+            'lgas' => Lga::query()->visibleTo($user)->orderBy('name')->get(),
+            'map' => $layers->build($user),
+            'lgaRows' => $intel->lgas($user),
+            'party' => Intelligence::party(),
         ]);
     }
 
@@ -62,7 +65,7 @@ class AreaController extends Controller
         ]);
     }
 
-    public function ward(Request $request, Lga $lga, string $ward, Structure $structure): View
+    public function ward(Request $request, Lga $lga, string $ward, Structure $structure, Intelligence $intel): View
     {
         $ward = Ward::query()->where('lga_id', $lga->id)->where('slug', $ward)->firstOrFail();
         abort_unless($request->user()->canSeeWard($ward), 403, 'This ward is outside your area.');
@@ -79,17 +82,13 @@ class AreaController extends Controller
             'events' => Event::query()->where('ward_id', $ward->id)->where('starts_at', '>=', now()->subDays(30))->orderBy('starts_at')->limit(6)->get(),
             'registrations' => Voter::query()->counted()->where('ward_id', $ward->id)->count(),
             'wardOptions' => [$ward->id => $ward->fullName()],
+            'intel' => $intel->wards()->firstWhere('id', $ward->id),
+            'segments' => [
+                'support' => Voter::query()->counted()->where('ward_id', $ward->id)->selectRaw('support_level as k, count(*) as n')->groupBy('support_level')->pluck('n', 'k'),
+                'age' => Voter::query()->counted()->where('ward_id', $ward->id)->selectRaw('age_band as k, count(*) as n')->groupBy('age_band')->pluck('n', 'k'),
+                'occupation' => Voter::query()->counted()->where('ward_id', $ward->id)->selectRaw('occupation as k, count(*) as n')->groupBy('occupation')->pluck('n', 'k'),
+            ],
+            'issues' => Issue::query()->where('ward_id', $ward->id)->where('status', '!=', 'rejected')->selectRaw('category, count(*) as n')->groupBy('category')->orderByDesc('n')->limit(5)->pluck('n', 'category'),
         ]);
-    }
-
-    /**
-     * @return array<int, int> LGA id → wards with a coordinator
-     */
-    private function coordinatorsPerLga(): array
-    {
-        return User::query()->where('role', UserRole::WardCoordinator)->whereNotNull('ward_id')
-            ->join('wards', 'wards.id', '=', 'users.ward_id')
-            ->selectRaw('wards.lga_id, count(distinct users.ward_id) as n')->groupBy('wards.lga_id')
-            ->pluck('n', 'wards.lga_id')->map(fn ($n) => (int) $n)->all();
     }
 }

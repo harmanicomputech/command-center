@@ -37,7 +37,10 @@ class LgaMap
             $cells = [];
 
             foreach ($layers as $key => $layer) {
-                $cells[$key] = $this->cell($layer['values'][$name] ?? null, $layer['values'], $layer['format'] ?? 'number');
+                // Categorical layers (zones) arrive with their colour and text.
+                $cells[$key] = isset($layer['cells'])
+                    ? ($layer['cells'][$name] ?? ['step' => 0, 'value' => '—'])
+                    : $this->cell($layer['values'][$name] ?? null, $layer['values'], $layer['format'] ?? 'number');
             }
 
             $tiles[] = [
@@ -52,7 +55,7 @@ class LgaMap
 
         $legends = [];
         foreach ($layers as $key => $layer) {
-            $legends[$key] = ['label' => $layer['label'], 'legend' => $this->legend($layer['values'], $layer['format'] ?? 'number')];
+            $legends[$key] = ['label' => $layer['label'], 'legend' => $layer['legend'] ?? $this->legend($layer['values'], $layer['format'] ?? 'number'), 'categorical' => isset($layer['cells'])];
         }
 
         return ['tiles' => $tiles, 'layers' => $legends];

@@ -11,7 +11,10 @@ use App\Http\Controllers\Console\InfluencerController;
 use App\Http\Controllers\Console\IssueController;
 use App\Http\Controllers\Console\LeaderboardController;
 use App\Http\Controllers\Console\PeopleController;
+use App\Http\Controllers\Console\PresetController;
+use App\Http\Controllers\Console\ResultsController;
 use App\Http\Controllers\Console\SearchController;
+use App\Http\Controllers\Console\SegmentController;
 use App\Http\Controllers\Console\SettingsController;
 use App\Http\Controllers\Console\StructureController;
 use App\Http\Controllers\Console\SystemController;
@@ -22,6 +25,7 @@ use App\Http\Controllers\Console\VoterController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\InviteController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PushController;
 use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RunnerController;
 use Illuminate\Support\Facades\Route;
@@ -61,6 +65,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/field/photos', [PhotoController::class, 'upload'])->middleware('throttle:60,1')->name('field.photos');
     Route::get('/photos/{photo}/{size?}', [PhotoController::class, 'show'])->whereIn('size', ['thumb'])->name('photos.show');
 
+    Route::get('/notifications', [PushController::class, 'show'])->name('push');
+    Route::post('/push/subscribe', [PushController::class, 'subscribe'])->name('push.subscribe');
+    Route::post('/push/unsubscribe', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
+    Route::post('/push/test', [PushController::class, 'test'])->middleware('throttle:5,1')->name('push.test');
+
     Route::get('/account', [AccountController::class, 'show'])->name('account');
     Route::put('/account', [AccountController::class, 'update'])->name('account.update');
     Route::put('/account/password', [AccountController::class, 'password'])->middleware('throttle:10,1')->name('account.password');
@@ -69,6 +78,19 @@ Route::middleware('auth')->group(function () {
     Route::middleware('staff')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/search', SearchController::class)->middleware('throttle:120,1')->name('search');
+
+        Route::get('/brief', [DashboardController::class, 'brief'])->name('brief');
+        Route::get('/segments', [SegmentController::class, 'index'])->name('segments');
+        Route::post('/segments', [SegmentController::class, 'store'])->middleware('role:admin,strategist,lga_leader')->name('segments.store');
+        Route::delete('/segments/{segment}', [SegmentController::class, 'destroy'])->middleware('role:admin,strategist,lga_leader')->name('segments.destroy');
+
+        Route::middleware('role:admin,strategist')->group(function () {
+            Route::get('/results', [ResultsController::class, 'index'])->name('results');
+            Route::post('/results', [ResultsController::class, 'import'])->name('results.import');
+            Route::delete('/results/{year}', [ResultsController::class, 'destroy'])->whereNumber('year')->name('results.destroy');
+            Route::get('/presets', [PresetController::class, 'index'])->name('presets');
+            Route::put('/presets', [PresetController::class, 'update'])->name('presets.update');
+        });
 
         Route::get('/areas', [AreaController::class, 'index'])->name('areas');
         Route::get('/areas/{lga}', [AreaController::class, 'lga'])->name('areas.lga');
@@ -127,6 +149,8 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/system', [SystemController::class, 'show'])->name('system');
             Route::post('/system/migrate', [SystemController::class, 'migrate'])->name('system.migrate');
+            Route::post('/system/push-keys', [SystemController::class, 'pushKeys'])->name('system.push-keys');
+            Route::post('/system/ward-map', [SystemController::class, 'wardMap'])->name('system.ward-map');
             Route::post('/system/register', [SystemController::class, 'importRegister'])->name('system.register');
             Route::post('/system/register/confirm', [SystemController::class, 'confirmRegister'])->name('system.register.confirm');
 

@@ -243,6 +243,12 @@
                 </div>
                 <div class="card space-y-5 p-6">
                     <div class="flex flex-wrap gap-2"><x-engagement level="active" /><x-engagement level="occasional" /><x-engagement level="dormant" /></div>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (\App\Services\Intelligence::ZONES as $zoneKey => $zoneInfo)
+                            <x-badge :tone="$zoneInfo['tone']" dot>{{ $zoneInfo['label'] }}</x-badge>
+                        @endforeach
+                        <x-delta :value="4.2" suffix=" pts" label="this week" />
+                    </div>
                     <div class="grid grid-cols-2 gap-3">
                         @foreach (\App\Services\Badges::ALL as $key => [$name, $description, $icon])
                             <div class="card flex items-center gap-3 p-3 {{ $loop->index < 2 ? '' : 'opacity-50 grayscale' }}">

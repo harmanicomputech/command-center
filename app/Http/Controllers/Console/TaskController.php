@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Ward;
+use App\Services\PushAlerts;
 use App\Support\Audit;
 use App\Support\Time;
 use Illuminate\Http\RedirectResponse;
@@ -88,6 +89,8 @@ class TaskController extends Controller
         }
 
         $task = Task::create([...$data, 'lga_id' => $ward->lga_id, 'assignee_id' => $assignee?->id, 'created_by' => $user->id, 'status' => Task::OPEN]);
+        PushAlerts::queue('task_assigned', ['title' => 'New task: '.$task->title, 'body' => ($task->due_on ? 'Due '.$task->due_on->format('D j M').'. ' : '').'Open My tasks to start.', 'url' => route('field.task', $task, false), 'tag' => 'task-'.$task->id],
+            userIds: $assignee ? [$assignee->id] : User::query()->where('ward_id', $ward->id)->where('role', UserRole::Agent)->pluck('id')->all());
         Audit::record('tasks.create', "Set the task “{$task->title}” for ".($assignee?->name ?? 'everyone in '.$ward->name), ['task_id' => $task->id]);
 
         return redirect()->route('tasks.show', $task)->with('status', 'Task set. It shows on '.($assignee ? $assignee->firstName().'’s' : 'the ward’s agents’').' phones next time they sync.');

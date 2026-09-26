@@ -99,9 +99,8 @@ class BackgroundRunner
     protected function tasks(Carbon $now): array
     {
         return [
-            // Example shape, used by later phases:
-            // 'rss' => [self::everyMinutes($now, 15), fn () => Artisan::call('media:fetch')],
-            // 'daily-brief' => [self::dailyAt($now, '07:00'), fn () => Artisan::call('brief:daily')],
+            // 7 AM Lagos: "Your daily brief is ready" and quiet wards.
+            'daily-brief' => [self::dailyAt($now, '07:00'), fn () => Artisan::call('brief:notify')],
         ];
     }
 

@@ -25,8 +25,11 @@
                 $tag = $tile['allowed'] && $tile['slug'] ? 'a' : 'div';
                 $styles = [];
                 foreach ($keys as $key) {
-                    $step = $tile['cells'][$key]['step'];
-                    $styles[$key] = "grid-column: {$tile['col']}; grid-row: {$tile['row']}; background: var(--seq-{$step}); color: ".($step >= 4 ? 'var(--on-seq-strong)' : 'var(--text)');
+                    $cell = $tile['cells'][$key];
+                    $step = $cell['step'] ?? 0;
+                    $fill = $cell['color'] ?? "var(--seq-{$step})";
+                    $ink = isset($cell['color']) ? ($cell['ink'] ?? 'var(--text)') : ($step >= 4 ? 'var(--on-seq-strong)' : 'var(--text)');
+                    $styles[$key] = "grid-column: {$tile['col']}; grid-row: {$tile['row']}; background: {$fill}; color: {$ink}";
                 }
             @endphp
             <{{ $tag }} @if ($tag === 'a') href="{{ route('areas.lga', $tile['slug']) }}" @endif
@@ -43,8 +46,12 @@
 
     @foreach ($map['layers'] as $key => $layer)
         <div x-show="layer === '{{ $key }}'" @if (! $loop->first) x-cloak @endif class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
-            <span class="flex items-center gap-2">
-                @if (count($layer['legend']) === 2)
+            <span class="flex flex-wrap items-center gap-2">
+                @if ($layer['categorical'] ?? false)
+                    @foreach ($layer['legend'] as [$color, $text])
+                        <span class="flex items-center gap-1.5"><i class="block size-2.5 rounded" style="background: {{ $color }}"></i>{{ $text }}</span>
+                    @endforeach
+                @elseif (count($layer['legend']) === 2)
                     <span>{{ $layer['legend'][0][1] }}</span>
                     <span class="flex overflow-hidden rounded">@for ($s = 1; $s <= 5; $s++)<i class="block h-2.5 w-5" style="background: var(--seq-{{ $s }})"></i>@endfor</span>
                     <span>{{ $layer['legend'][1][1] }}</span>

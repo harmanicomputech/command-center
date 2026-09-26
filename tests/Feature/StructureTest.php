@@ -64,7 +64,7 @@ class StructureTest extends TestCase
         $this->assertSame(['Quiet for 8 days'], app(Structure::class)->wardHealth($viewer)->first()['reasons']);
 
         $this->actingAs($viewer)->get('/structure')->assertOk()->assertSee('Izzi Ward 02')->assertSee('No coordinator');
-        $this->get('/')->assertOk()->assertSee('Wards needing attention');
+        $this->get('/')->assertOk()->assertSee('Wards with no activity');
     }
 
     public function test_influence_notes_are_kept_per_ward_within_the_area(): void

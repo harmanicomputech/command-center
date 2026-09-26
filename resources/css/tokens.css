@@ -93,6 +93,9 @@
     --div-weakish: #f1a07a;
     --div-weak: #cf4b3b;
     --div-unknown: #d9d6cf;
+    --on-div-strong: #ffffff;
+    --on-div-swing: #231800;
+    --on-div-weak: #ffffff;
 
     /* Depth */
     --shadow-xs: 0 1px 2px rgb(28 27 24 / 0.05);
@@ -166,6 +169,9 @@
     --div-weakish: #b8633f;
     --div-weak: #d4544a;
     --div-unknown: #34332f;
+    --on-div-strong: #04160f;
+    --on-div-swing: #1a1200;
+    --on-div-weak: #1d0403;
 
     --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.015);

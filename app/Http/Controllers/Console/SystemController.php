@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Console;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\PushSubscription;
 use App\Models\User;
 use App\Services\PollingUnitImporter;
+use App\Services\PushNotifier;
 use App\Services\RegisterStatus;
+use App\Services\WardMap;
 use App\Support\Audit;
 use App\Support\BackgroundRunner;
 use App\Support\Settings;
@@ -24,7 +27,7 @@ use Throwable;
  */
 class SystemController extends Controller
 {
-    public function show(RegisterStatus $register): View
+    public function show(RegisterStatus $register, PushNotifier $notifier, WardMap $wardMap): View
     {
         $heartbeat = Time::parse(Settings::get('runner.heartbeat'));
 
@@ -37,6 +40,9 @@ class SystemController extends Controller
             'afterResponse' => BackgroundRunner::canWorkAfterResponse(),
             'pendingMigrations' => $this->pendingMigrations(),
             'queue' => $this->queueCounts(),
+            'pushConfigured' => $notifier->configured(),
+            'pushDevices' => PushSubscription::query()->count(),
+            'wardMap' => $wardMap->load(),
             'counts' => [
                 'Users' => User::query()->count(),
                 'Audit entries' => AuditLog::query()->count(),
@@ -48,6 +54,49 @@ class SystemController extends Controller
                 'Timezone shown' => Time::zone(),
             ],
         ]);
+    }
+
+    /**
+     * Create the Web Push (VAPID) keys, once.
+     */
+    public function pushKeys(PushNotifier $notifier): RedirectResponse
+    {
+        if (! $notifier->generateKeys()) {
+            return back()->with('error', 'Notification keys already exist. Changing them would stop every device’s notifications.');
+        }
+
+        Audit::record('system.push_keys', 'Set up notification (VAPID) keys');
+
+        return back()->with('status', 'Notifications are set up. Each person turns them on under Notifications.');
+    }
+
+    /**
+     * Upload (or remove) the ward-boundary GeoJSON for the ward map.
+     */
+    public function wardMap(Request $request, WardMap $wardMap): RedirectResponse
+    {
+        if ($request->boolean('remove')) {
+            $wardMap->forget();
+            Audit::record('system.ward_map', 'Removed the ward map');
+
+            return back()->with('status', 'Ward map removed. Maps show LGA tiles again.');
+        }
+
+        $data = $request->validate([
+            'file' => ['required', 'file', 'max:51200'],
+            'attribution' => ['required', 'string', 'max:160'],
+        ]);
+        @set_time_limit(180);
+
+        try {
+            $result = $wardMap->import($request->file('file')->getRealPath(), $data['attribution']);
+        } catch (Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        Audit::record('system.ward_map', "Loaded ward boundaries: {$result['matched']} wards matched", rows: $result['matched']);
+
+        return back()->with($result['missing'] ? 'error' : 'status', "{$result['matched']} wards matched.".($result['missing'] ? " {$result['missing']} register wards have no shape".($result['unmatched'] ? '; unmatched in the file: '.implode('; ', array_slice($result['unmatched'], 0, 8)) : '').'.' : ''));
     }
 
     /**

@@ -7,6 +7,7 @@ import { registerPwa } from './pwa';
 import { registerOutbox } from './outbox';
 import { registerPhotoField } from './photos';
 import { registerFieldForms } from './field-forms';
+import { registerPush } from './push';
 
 Alpine.plugin(focus);
 registerTheme(Alpine);
@@ -16,6 +17,7 @@ registerPwa(Alpine);
 registerOutbox(Alpine);
 registerPhotoField(Alpine);
 registerFieldForms(Alpine);
+registerPush(Alpine);
 
 window.Alpine = Alpine;
 Alpine.start();

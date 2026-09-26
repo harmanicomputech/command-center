@@ -82,6 +82,27 @@
         </x-card>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <x-card title="Notifications" description="Web Push to phones and computers: the 7 AM brief, new tasks, quiet wards, security issues." icon="bell" id="push">
+                @if ($pushConfigured)
+                    <p class="flex items-center gap-2 text-sm font-medium text-good"><x-icon name="circle-check" size="18" /> Set up. {{ $pushDevices }} {{ \Illuminate\Support\Str::plural('device', $pushDevices) }} subscribed.</p>
+                    <x-button :href="route('push')" variant="secondary" size="sm" icon="bell" class="mt-4">My notifications</x-button>
+                @else
+                    <form method="post" action="{{ route('system.push-keys') }}">@csrf<x-button icon="bell">Set up notifications</x-button></form>
+                    <p class="hint">Creates the keys once. Then each person turns notifications on for their device.</p>
+                @endif
+            </x-card>
+            <x-card title="Ward map" description="Ward boundaries for the map (e.g. GRID3 Nigeria wards, CC BY 4.0), as GeoJSON. Without it, maps show LGA tiles." icon="map" id="ward-map">
+                @if ($wardMap)
+                    <p class="flex items-center gap-2 text-sm font-medium text-good"><x-icon name="circle-check" size="18" /> {{ count($wardMap['wards']) }} wards loaded · {{ $wardMap['attribution'] }}</p>
+                    <form method="post" action="{{ route('system.ward-map') }}" class="mt-3">@csrf<input type="hidden" name="remove" value="1"><x-button variant="ghost" size="sm" icon="trash-2">Remove</x-button></form>
+                @endif
+                <form method="post" action="{{ route('system.ward-map') }}" enctype="multipart/form-data" class="mt-3 space-y-3">
+                    @csrf
+                    <input type="file" name="file" accept=".geojson,.json,application/geo+json,application/json" class="input" aria-label="GeoJSON file">
+                    <x-input name="attribution" label="Source and licence" value="GRID3 Nigeria, CC BY 4.0" />
+                    <x-button variant="secondary" size="sm" icon="upload">{{ $wardMap ? 'Replace' : 'Load' }} ward boundaries</x-button>
+                </form>
+            </x-card>
             <x-card title="Data" icon="database">
                 <dl class="divide-y divide-line text-sm">
                     @foreach ($counts as $label => $count)

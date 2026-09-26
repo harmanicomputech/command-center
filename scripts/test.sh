@@ -9,6 +9,8 @@ for line in sys.stdin:
     except Exception:
         print(line.rstrip()); continue
     print(d.get('result'), d.get('tests'), 'tests,', d.get('passed'), 'passed', ('risky %s' % d['risky']) if d.get('risky') else '')
+    for f in d.get('error_details', []) or []:
+        m = str(f.get('message', f)); print('ERROR', f.get('test', ''), m[:600])
     for f in d.get('failures', []):
-        print('FAIL', f['test'], f['message'][:2000])
+        m = f['message']; print('FAIL', f['test'], m[:300] + (' ... ' + m[-400:] if len(m) > 700 else m[300:]))
 "

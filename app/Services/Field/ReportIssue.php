@@ -5,8 +5,10 @@ namespace App\Services\Field;
 use App\Models\Issue;
 use App\Models\User;
 use App\Models\Ward;
+use App\Services\PushAlerts;
 use App\Support\Time;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -39,7 +41,7 @@ class ReportIssue implements SyncHandler
 
         $time = Time::parse($data['reported_at'] ?? null);
 
-        Issue::create([
+        $issue = Issue::create([
             'uuid' => $uuid,
             'category' => $data['category'],
             'description' => trim($data['description']),
@@ -51,6 +53,18 @@ class ReportIssue implements SyncHandler
             'reported_by' => $user->id,
             'reported_at' => $time && $time->lte(now()->addMinutes(10)) && $time->gte(now()->subDays(60)) ? $time : now(),
         ]);
+
+        // Security reports alert the LGA's leaders (only fresh ones, so a
+        // backlog synced days later doesn't set off alarms).
+        if ($issue->category === 'security' && $issue->reported_at->gte(now()->subMinutes(30))) {
+            PushAlerts::queue('security', [
+                'title' => 'Security issue in '.$ward->name.', '.$ward->lga->name,
+                'body' => Str::limit($issue->description, 120),
+                'url' => '/issues?category=security',
+                'tag' => 'security-'.$issue->id,
+                'urgent' => in_array($issue->severity, ['high', 'critical'], true),
+            ], $ward->lga_id);
+        }
 
         return ['status' => 'ok'];
     }

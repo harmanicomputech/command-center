@@ -21,7 +21,7 @@ class PagesTest extends TestCase
     public function test_every_command_center_page_renders_empty_and_with_the_register(): void
     {
         $this->actingAs(User::factory()->admin()->create(['name' => 'Ada Admin']));
-        $pages = ['/', '/areas', '/users', '/settings', '/system', '/audit', '/design', '/account', '/field', '/field/me', '/field/register', '/field/tasks', '/field/issues'];
+        $pages = ['/', '/brief', '/areas', '/segments', '/results', '/presets', '/tasks', '/issues', '/issues/brief', '/leaderboard', '/people', '/structure', '/influence', '/events', '/voters', '/team', '/notifications', '/users', '/settings', '/system', '/audit', '/design', '/account', '/field', '/field/me', '/field/register', '/field/tasks', '/field/issues', '/field/leaderboard', '/field/outbox', '/field/registrations'];
 
         foreach ($pages as $page) {
             $this->get($page)->assertOk();
@@ -33,8 +33,8 @@ class PagesTest extends TestCase
             $this->get($page)->assertOk();
         }
 
-        $this->get('/')->assertSee('Good')->assertSee('Set-up checklist');
-        $this->get('/areas')->assertSee('Ohaukwu')->assertSee('4,592,490');
+        $this->get('/')->assertSee('Good')->assertSee('Finish setting up');
+        $this->get('/areas?all=1')->assertSee('Ohaukwu')->assertSee('Ohaukwu Ward 01')->assertSee('Priority');
         $this->get('/areas/ohaukwu')->assertOk()->assertSee('Ohaukwu Ward 01');
         $this->get('/design')->assertSee('Design system')->assertSee('--brand');
     }
