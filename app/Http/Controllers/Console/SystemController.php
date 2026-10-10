@@ -119,6 +119,23 @@ class SystemController extends Controller
     }
 
     /**
+     * Reload the demo so its dates are around today again (they don't move).
+     */
+    public function reloadDemo(Request $request, DemoData $demo): RedirectResponse
+    {
+        try {
+            $demo->remove();
+            $demo->load($request->user());
+        } catch (Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Demo data couldn’t be reloaded: '.$e->getMessage());
+        }
+
+        return redirect(route('system').'#demo')->with('status', 'Demo data reloaded with today’s dates. The demo sign-ins below are new.');
+    }
+
+    /**
      * Remove exactly the rows the demo created.
      */
     public function removeDemo(DemoData $demo): RedirectResponse

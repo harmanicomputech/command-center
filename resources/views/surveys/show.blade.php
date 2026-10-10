@@ -13,7 +13,7 @@
                     <form method="post" action="{{ route('surveys.status', $survey) }}" x-data x-on:submit="if (! confirm('Close this survey? No more answers will be accepted.')) $event.preventDefault()">@csrf<input type="hidden" name="status" value="closed"><x-button variant="secondary" icon="lock">Close</x-button></form>
                 @endif
             @endif
-            @if (auth()->user()->isAdmin())<x-button :href="route('surveys.export', $survey)" variant="ghost" icon="download">CSV</x-button>@endif
+            @if (auth()->user()->isAdmin())<x-button :href="route('surveys.export', $survey)" variant="ghost" icon="download" data-no-progress>CSV</x-button>@endif
         </x-slot:actions>
     </x-page-header>
 

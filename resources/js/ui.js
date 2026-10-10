@@ -134,4 +134,22 @@ export function registerUi(Alpine) {
         const [single, multi] = unicode ? [70, 67] : [160, 153];
         return { length, unicode, parts: length === 0 ? 0 : length <= single ? 1 : Math.ceil(length / multi) };
     };
+
+    // x-data="sheet": drag a bottom sheet's handle down to close it.
+    Alpine.data('sheet', () => ({
+        drag: 0,
+        startY: null,
+        start(event) {
+            this.startY = event.touches[0].clientY;
+        },
+        move(event) {
+            if (this.startY === null) return;
+            this.drag = Math.max(0, event.touches[0].clientY - this.startY);
+        },
+        end(close) {
+            if (this.drag > 90) close();
+            this.drag = 0;
+            this.startY = null;
+        },
+    }));
 }

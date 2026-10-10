@@ -214,8 +214,12 @@
             transform: translateY(-1px);
         }
 
-        &:active {
-            transform: translateY(0);
+        &:active,
+        &[data-pressed] {
+            transform: scale(0.985);
+            border-color: color-mix(in oklab, var(--brand), transparent 55%);
+            background-color: color-mix(in oklab, var(--surface), var(--brand) 4%);
+            box-shadow: var(--shadow-card);
         }
     }
 
@@ -242,8 +246,26 @@
             box-shadow var(--dur-fast) var(--ease-out),
             transform var(--dur-fast) var(--ease-out);
 
-        &:active:not(:disabled) {
-            transform: scale(0.98);
+        &:active:not(:disabled),
+        &[data-pressed]:not(:disabled) {
+            transform: scale(0.96);
+            filter: brightness(0.94);
+        }
+
+        &[data-loading] {
+            pointer-events: none;
+            opacity: 0.85;
+
+            &::after {
+                content: '';
+                width: 15px;
+                height: 15px;
+                flex: none;
+                border-radius: 999px;
+                border: 2px solid currentColor;
+                border-right-color: transparent;
+                animation: spin 0.6s linear infinite;
+            }
         }
 
         &:disabled,
@@ -843,6 +865,16 @@
             color: var(--text);
         }
 
+        &:active,
+        &[data-pressed] {
+            background: var(--surface-3);
+            color: var(--text);
+        }
+
+        @media (pointer: coarse) {
+            height: 44px;
+        }
+
         &[aria-current='page'] {
             background: var(--surface);
             color: var(--text);
@@ -867,9 +899,8 @@
         grid-template-columns: repeat(5, minmax(0, 1fr));
         align-items: end;
         padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-        background: color-mix(in oklab, var(--surface), transparent 6%);
-        backdrop-filter: saturate(1.6) blur(16px);
-        -webkit-backdrop-filter: saturate(1.6) blur(16px);
+        background: var(--surface);
+        box-shadow: 0 -8px 24px -16px rgb(0 0 0 / 0.18);
         border-top: 1px solid var(--border);
     }
 
@@ -890,16 +921,36 @@
             transform var(--dur-fast) var(--ease-out);
 
         & svg {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
+        }
+
+        & .tab-icon {
+            display: grid;
+            place-items: center;
+            width: 56px;
+            height: 30px;
+            border-radius: 999px;
+            transition:
+                background-color var(--dur) var(--ease-out),
+                transform var(--dur) var(--ease-out);
         }
 
         &[aria-current='page'] {
             color: var(--brand-fg);
+
+            & .tab-icon {
+                background: var(--brand-soft);
+            }
         }
 
-        &:active {
-            transform: scale(0.96);
+        &:active,
+        &[data-pressed] {
+            transform: scale(0.94);
+
+            & .tab-icon {
+                background: color-mix(in oklab, var(--brand-soft), var(--brand) 12%);
+            }
         }
     }
 
@@ -934,8 +985,10 @@
             height: 28px;
         }
 
-        &:active .tab-hero-button {
-            transform: scale(0.95);
+        &:active .tab-hero-button,
+        &[data-pressed] .tab-hero-button {
+            transform: scale(0.92);
+            filter: brightness(0.95);
         }
     }
 
@@ -964,6 +1017,69 @@
         &:hover,
         &:focus-visible {
             background: var(--surface-2);
+        }
+
+        &:active,
+        &[data-pressed] {
+            background: var(--surface-3);
+        }
+
+        @media (pointer: coarse) {
+            min-height: 44px;
+        }
+    }
+
+    /* The phone "More" sheet: every page as a big tile. */
+    .more-tile {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 88px;
+        padding: 12px 6px;
+        border-radius: 18px;
+        background: var(--surface-2);
+        color: var(--text);
+        font-size: 12.5px;
+        line-height: 16px;
+        font-weight: 600;
+        text-align: center;
+        transition:
+            transform var(--dur-fast) var(--ease-out),
+            background-color var(--dur-fast) var(--ease-out);
+
+        & .more-tile-icon {
+            display: grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--surface);
+            color: var(--brand-fg);
+            box-shadow: var(--shadow-xs);
+
+            & svg {
+                width: 21px;
+                height: 21px;
+            }
+        }
+
+        &[aria-current='page'] {
+            background: var(--brand-soft);
+            color: var(--brand-fg);
+
+            & .more-tile-icon {
+                background: var(--brand);
+                color: var(--on-brand);
+            }
+        }
+
+        &:active,
+        &[data-pressed] {
+            transform: scale(0.95);
+            background: var(--surface-3);
         }
     }
 
@@ -1070,5 +1186,126 @@
     .card {
         box-shadow: none;
         break-inside: avoid;
+    }
+}
+
+/* Ripple: a soft wave from the finger, clipped to the element's shape. */
+.ripple-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.ripple {
+    position: absolute;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.16;
+    transform: scale(0);
+    animation: ripple 520ms var(--ease-out) forwards;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* The page-load bar while the next page arrives. */
+.nav-progress {
+    position: fixed;
+    z-index: 100;
+    inset: 0 auto auto 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, var(--brand), var(--accent));
+    box-shadow: 0 0 10px color-mix(in oklab, var(--brand), transparent 40%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.nav-progress-active {
+    opacity: 1;
+    animation: nav-progress 8s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+
+.nav-progress-done {
+    width: 100% !important;
+    animation: none;
+    opacity: 0;
+    transition:
+        width 150ms ease-out,
+        opacity 300ms ease 150ms;
+}
+
+@keyframes nav-progress {
+    0% {
+        width: 0;
+    }
+    10% {
+        width: 35%;
+    }
+    40% {
+        width: 70%;
+    }
+    100% {
+        width: 92%;
+    }
+}
+
+/* Each page's content rises in as it loads. */
+#main > *:not(.rise) {
+    animation: page-in 380ms var(--ease-out) backwards;
+}
+
+#main > *:not(.rise):nth-child(2) {
+    animation-delay: 40ms;
+}
+
+#main > *:not(.rise):nth-child(3) {
+    animation-delay: 80ms;
+}
+
+#main > *:not(.rise):nth-child(4) {
+    animation-delay: 120ms;
+}
+
+#main > *:not(.rise):nth-child(n + 5) {
+    animation-delay: 160ms;
+}
+
+@keyframes page-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+.segmented label:has(input):active,
+.segmented label[data-pressed] {
+    transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #main > *:not(.rise) {
+        animation: none;
+    }
+
+    .ripple-layer {
+        display: none;
+    }
+
+    .nav-progress-active {
+        animation-duration: 0.01ms;
+        width: 92%;
     }
 }

@@ -255,8 +255,9 @@ Route::middleware('auth')->group(function () {
             Route::post('/system/migrate', [SystemController::class, 'migrate'])->name('system.migrate');
             Route::post('/system/push-keys', [SystemController::class, 'pushKeys'])->name('system.push-keys');
             Route::post('/system/secrets', [SystemController::class, 'secrets'])->name('system.secrets');
-            Route::post('/system/demo', [SystemController::class, 'loadDemo'])->middleware('throttle:3,1')->name('system.demo');
-            Route::delete('/system/demo', [SystemController::class, 'removeDemo'])->middleware('throttle:3,1')->name('system.demo.remove');
+            Route::post('/system/demo', [SystemController::class, 'loadDemo'])->middleware('throttle:10,1')->name('system.demo');
+            Route::post('/system/demo/reload', [SystemController::class, 'reloadDemo'])->middleware('throttle:10,1')->name('system.demo.reload');
+            Route::delete('/system/demo', [SystemController::class, 'removeDemo'])->middleware('throttle:10,1')->name('system.demo.remove');
             Route::post('/system/ward-map', [SystemController::class, 'wardMap'])->name('system.ward-map');
             Route::post('/system/register', [SystemController::class, 'importRegister'])->name('system.register');
             Route::post('/system/register/confirm', [SystemController::class, 'confirmRegister'])->name('system.register.confirm');

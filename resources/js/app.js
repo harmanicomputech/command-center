@@ -9,6 +9,7 @@ import { registerPhotoField } from './photos';
 import { registerFieldForms } from './field-forms';
 import { registerPush } from './push';
 import { registerEngage } from './engage';
+import { registerFeedback } from './feedback';
 
 Alpine.plugin(focus);
 registerTheme(Alpine);
@@ -20,6 +21,7 @@ registerPhotoField(Alpine);
 registerFieldForms(Alpine);
 registerPush(Alpine);
 registerEngage(Alpine);
+registerFeedback();
 
 window.Alpine = Alpine;
 Alpine.start();

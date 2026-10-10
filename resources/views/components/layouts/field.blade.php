@@ -11,7 +11,7 @@
     ];
 @endphp
 <x-layouts.base :title="$title" class="field-app">
-    <header data-topbar class="no-print sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-xl supports-[backdrop-filter]:bg-bg/70">
+    <header data-topbar class="no-print sticky top-0 z-20 border-b border-line bg-bg md:bg-bg/90 md:backdrop-blur-xl">
         <div class="mx-auto flex h-14 max-w-xl items-center gap-3 px-4">
             @if ($back)
                 <a href="{{ $back }}" class="btn btn-ghost btn-icon -ml-2" aria-label="Back"><x-icon name="arrow-left" /></a>
@@ -39,7 +39,7 @@
                 </a>
             @else
                 <a href="{{ route($route) }}" class="tab" @if (request()->routeIs($route.'*')) aria-current="page" @endif>
-                    <x-icon :name="$icon" />
+                    <span class="tab-icon"><x-icon :name="$icon" /></span>
                     <span>{{ $label }}</span>
                 </a>
             @endif

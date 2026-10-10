@@ -51,6 +51,10 @@ class DemoDataTest extends TestCase
         $this->post('/login', ['login' => $logins['agent'], 'password' => $logins['pin']])->assertRedirect();
         $this->get('/field')->assertOk();
 
+        // Reloading brings the dates back to today.
+        $this->actingAs($admin)->post('/system/demo/reload')->assertRedirect()->assertSessionHas('status');
+        $this->assertSame(401, Voter::query()->count());
+
         // Removing keeps real records made before or during the demo.
         $this->actingAs($admin)->delete('/system/demo')->assertRedirect();
         $this->assertFalse(DemoData::loaded());

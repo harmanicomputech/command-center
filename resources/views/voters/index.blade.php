@@ -3,7 +3,7 @@
         description="Voters the field has registered in your area. Call a sample to verify them: invalid records lose the agent’s points, and possible duplicates don’t count until someone decides.">
         <x-slot:actions>
             @if (auth()->user()->isAdmin())
-                <x-button :href="route('voters.export')" variant="secondary" icon="download">Export CSV</x-button>
+                <x-button :href="route('voters.export')" variant="secondary" icon="download" data-no-progress>Export CSV</x-button>
             @endif
             @if ($canVerify)
                 <x-button :href="route('voters', ['filter' => 'spot-check'])" icon="phone">Spot-check 10</x-button>

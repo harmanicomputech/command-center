@@ -172,10 +172,17 @@
                         </dl>
                         <p class="hint">Use a private window to sign in as someone else. These accounts disappear when you remove the demo.</p>
                     @endif
-                    <form method="post" action="{{ route('system.demo.remove') }}" class="mt-4" onsubmit="return confirm('Remove all demo data? Real records are kept.')">
-                        @csrf @method('delete')
-                        <x-button variant="secondary" icon="trash-2">Remove demo data</x-button>
-                    </form>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <form method="post" action="{{ route('system.demo.reload') }}" onsubmit="return confirm('Reload the demo with today’s dates? The demo sign-ins will change.')">
+                            @csrf
+                            <x-button variant="secondary" icon="refresh-cw">Reload with today’s dates</x-button>
+                        </form>
+                        <form method="post" action="{{ route('system.demo.remove') }}" onsubmit="return confirm('Remove all demo data? Real records are kept.')">
+                            @csrf @method('delete')
+                            <x-button variant="ghost" icon="trash-2">Remove demo data</x-button>
+                        </form>
+                    </div>
+                    <p class="hint">Loaded {{ \App\Support\Time::parse(\App\Support\Settings::get('demo.loaded_at'))?->diffForHumans() }}. Its dates don’t move, so reload it before a presentation.</p>
                 @else
                     <ul class="list-disc space-y-1 pl-5 text-sm text-muted">
                         <li>{{ number_format(\App\Services\DemoData::VOTERS) }} canvassed voters, a team of 104 (leaders, coordinators, agents)</li>
@@ -199,7 +206,7 @@
                 <p class="hint">Fields: <code>name</code>, <code>phone</code>, <code>lga</code> (name), <code>ward</code>, <code>help[]</code> ({{ implode(', ', array_keys(config('volunteers.help'))) }}), <code>message</code>, <code>consent=1</code>. Answers JSON: <code>{"status":"ok"}</code>, or 422 with the errors.</p>
             </x-card>
             <x-card title="Backup" description="Every table as CSV in an AES-256 encrypted zip. Passwords, tokens and API keys are left out; phone numbers stay encrypted with the app key." icon="download" id="backup">
-                <form method="post" action="{{ route('system.backup') }}" class="space-y-4" autocomplete="off">
+                <form method="post" action="{{ route('system.backup') }}" class="space-y-4" autocomplete="off" data-download>
                     @csrf
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <x-input name="password" type="password" label="Backup password" autocomplete="new-password" hint="At least 12 characters. It isn’t stored: without it the zip can’t be opened." required />
