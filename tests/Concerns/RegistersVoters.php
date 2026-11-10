@@ -3,6 +3,7 @@
 namespace Tests\Concerns;
 
 use App\Models\User;
+use App\Models\Voter;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
@@ -25,6 +26,7 @@ trait RegistersVoters
             'top_issue' => 'roads',
             'consent' => true,
             'captured_at' => now()->toIso8601String(),
+            'face_check' => ['status' => 'passed', 'challenges' => ['smile', 'turn', 'blink'], 'duration_ms' => 14000, 'failures' => 0, 'camera' => 'environment'],
             ...$overrides,
         ];
     }
@@ -39,6 +41,12 @@ trait RegistersVoters
             $items[] = ['id' => is_string($key) ? $key : (string) Str::uuid(), 'type' => 'voter', 'payload' => $payload];
         }
 
-        return $this->actingAs($agent)->postJson('/api/field/sync', ['items' => $items]);
+        $response = $this->actingAs($agent)->postJson('/api/field/sync', ['items' => $items]);
+
+        // As on a phone, each passed face check's photo follows its record
+        // (FaceCheckTest sends real photos).
+        Voter::query()->whereIn('uuid', array_map(fn ($item) => strtolower($item['id']), $items))->where('face_status', 'passed')->update(['face_photo_at' => now()]);
+
+        return $response;
     }
 }

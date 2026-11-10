@@ -7,6 +7,7 @@ use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /**
  * A voter registered by the field. The phone is encrypted at rest; search
@@ -38,6 +39,8 @@ class Voter extends Model
             'possible_duplicate' => 'boolean',
             'latitude' => 'float',
             'longitude' => 'float',
+            'face_check' => 'array',
+            'face_photo_at' => 'datetime',
         ];
     }
 
@@ -64,6 +67,22 @@ class Voter extends Model
     public function original(): BelongsTo
     {
         return $this->belongsTo(self::class, 'duplicate_of');
+    }
+
+    /** The face photo from the face check (one per registration). */
+    public function facePhoto(): MorphOne
+    {
+        return $this->morphOne(Photo::class, 'owner')->latestOfMany();
+    }
+
+    /**
+     * Earns the unverified points: its face check passed and the photo
+     * arrived, or no check was required (verified records always earn).
+     */
+    public function scopeEarnsBeforeVerification(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $query) => $query->where('voters.face_status', 'not_required')
+            ->orWhere(fn (Builder $query) => $query->where('voters.face_status', 'passed')->whereNotNull('voters.face_photo_at')));
     }
 
     /** Counts towards points and totals: not invalid, not an unresolved duplicate. */

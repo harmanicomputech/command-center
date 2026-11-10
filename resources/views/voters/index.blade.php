@@ -1,6 +1,6 @@
 <x-layouts.app title="Registrations">
     <x-page-header title="Registrations" eyebrow="Field"
-        description="Voters the field has registered in your area. Call a sample to verify them: invalid records lose the agent’s points, and possible duplicates don’t count until someone decides.">
+        description="Voters the field has registered in your area. Call a sample to verify them: invalid records lose the agent’s points, and possible duplicates don’t count until someone decides. Records without a passed face check earn points only once verified.">
         <x-slot:actions>
             @if (auth()->user()->isAdmin())
                 <x-button :href="route('voters.export')" variant="secondary" icon="download" data-no-progress>Export CSV</x-button>
@@ -33,6 +33,9 @@
         <x-button variant="secondary" icon="funnel">Filter</x-button>
     </form>
 
+    @if ($filter === 'face')
+        <x-alert tone="info" title="Registrations without a passed face check" class="mb-4">A plain photo, or none at all. They earn the agent nothing until verified: call the voter, and look at the photo. The same face on several names is a warning sign.</x-alert>
+    @endif
     @if ($filter === 'spot-check')
         <x-alert tone="info" title="Today’s spot-check" class="mb-4">A random sample of 10 unverified registrations. Call each voter, confirm their name and that they agreed, then mark them.</x-alert>
     @endif
@@ -41,7 +44,13 @@
         @forelse ($voters as $voter)
             <article class="grid grid-cols-1 gap-3 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto] lg:items-center">
                 <div class="flex min-w-0 items-start gap-3">
-                    <x-avatar :name="$voter->name ?? '?'" :size="40" />
+                    @if ($voter->facePhoto)
+                        <a href="{{ $voter->facePhoto->url() }}" target="_blank" class="flex-none" data-no-progress>
+                            <img src="{{ $voter->facePhoto->url(true) }}" alt="Face photo of {{ $voter->name }}" class="size-14 rounded-xl border border-line object-cover" loading="lazy">
+                        </a>
+                    @else
+                        <x-avatar :name="$voter->name ?? '?'" :size="40" />
+                    @endif
                     <div class="min-w-0">
                         <p class="truncate font-semibold">{{ $voter->name }}</p>
                         <p class="text-sm text-muted">
@@ -56,6 +65,7 @@
                             <x-badge :tone="$voter->supportTone()" dot>{{ $voter->supportLabel() }}</x-badge>
                             @if ($voter->top_issue)<x-badge>{{ config('canvass.issues.'.$voter->top_issue) }}</x-badge>@endif
                             @include('field._status', ['voter' => $voter])
+                            @include('voters._face', ['voter' => $voter])
                         </div>
                     </div>
                 </div>

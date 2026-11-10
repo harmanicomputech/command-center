@@ -7,6 +7,7 @@ use App\Models\Issue;
 use App\Models\NarrativeReport;
 use App\Models\TaskReport;
 use App\Models\User;
+use App\Models\Voter;
 use App\Services\Ai\AnthropicModel;
 use App\Services\Ai\LanguageModel;
 use App\Support\Settings;
@@ -32,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
             'narrative_report' => NarrativeReport::class,
             'task_report' => TaskReport::class,
             'user' => User::class,
+            'voter' => Voter::class,
         ]);
 
         // "Keep me signed in" lasts 30 days, so agents can work offline.

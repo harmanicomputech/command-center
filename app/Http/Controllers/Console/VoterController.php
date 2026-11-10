@@ -27,6 +27,7 @@ class VoterController extends Controller
         'all' => 'All',
         'unverified' => 'Unverified',
         'duplicates' => 'Possible duplicates',
+        'face' => 'No face check',
         'verified' => 'Verified',
         'invalid' => 'Invalid',
         'spot-check' => 'Spot-check',
@@ -40,13 +41,14 @@ class VoterController extends Controller
         $wardId = $request->integer('ward') ?: null;
 
         $base = Voter::query()->inAreaOf($user)->whereNull('erased_at');
-        $query = (clone $base)->with('ward.lga', 'agent', 'original.agent')
+        $query = (clone $base)->with('ward.lga', 'agent', 'original.agent', 'facePhoto')
             ->when($wardId, fn (Builder $query) => $query->where('voters.ward_id', $wardId))
             ->when($q !== '', fn (Builder $query) => $this->search($query, $q));
 
         match ($filter) {
             'unverified' => $query->where('status', Voter::UNVERIFIED)->where('possible_duplicate', false),
             'duplicates' => $query->where('possible_duplicate', true),
+            'face' => $query->whereIn('face_status', ['photo_only', 'missing']),
             'verified' => $query->where('status', Voter::VERIFIED),
             'invalid' => $query->where('status', Voter::INVALID),
             // A fresh random sample of unverified records to call today.
@@ -68,6 +70,7 @@ class VoterController extends Controller
                 'all' => (clone $base)->count(),
                 'unverified' => (clone $base)->where('status', Voter::UNVERIFIED)->where('possible_duplicate', false)->count(),
                 'duplicates' => (clone $base)->where('possible_duplicate', true)->count(),
+                'face' => (clone $base)->whereIn('face_status', ['photo_only', 'missing'])->count(),
                 'verified' => (clone $base)->where('status', Voter::VERIFIED)->count(),
                 'invalid' => (clone $base)->where('status', Voter::INVALID)->count(),
             ],
@@ -136,13 +139,13 @@ class VoterController extends Controller
 
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['id', 'name', 'phone', 'gender', 'age_band', 'occupation', 'lga', 'ward', 'community', 'support_level', 'top_issue', 'status', 'possible_duplicate', 'captured_at', 'agent', 'consent_version'], escape: '\\');
+            fputcsv($out, ['id', 'name', 'phone', 'gender', 'age_band', 'occupation', 'lga', 'ward', 'community', 'support_level', 'top_issue', 'status', 'possible_duplicate', 'captured_at', 'agent', 'consent_version', 'face_check'], escape: '\\');
             $query->chunk(500, function ($voters) use ($out) {
                 foreach ($voters as $voter) {
                     fputcsv($out, [
                         $voter->id, $voter->name, $voter->phone, $voter->gender, $voter->age_band, $voter->occupation,
                         $voter->ward?->lga?->name, $voter->ward?->name, $voter->community, $voter->support_level, $voter->top_issue,
-                        $voter->status, $voter->possible_duplicate ? 'yes' : 'no', $voter->captured_at?->toIso8601String(), $voter->agent?->name, $voter->consent_version,
+                        $voter->status, $voter->possible_duplicate ? 'yes' : 'no', $voter->captured_at?->toIso8601String(), $voter->agent?->name, $voter->consent_version, $voter->face_status,
                     ], escape: '\\');
                 }
             });

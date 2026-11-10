@@ -14,12 +14,20 @@
                             @endphp
                             <div>
                                 <label for="s-{{ $input }}" class="label">{{ $definition['label'] }}</label>
+                                @if ($definition['type'] === 'select')
+                                    <select id="s-{{ $input }}" name="{{ $input }}" class="input" @if ($errors->has($input)) aria-invalid="true" @endif>
+                                        @foreach ($definition['options'] as $value => $optionLabel)
+                                            <option value="{{ $value }}" @selected(old($input, \App\Support\Settings::get($field)) === $value)>{{ $optionLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                @else
                                 <div class="relative">
                                     <input id="s-{{ $input }}" name="{{ $input }}" class="input {{ isset($definition['suffix']) ? 'pr-20' : '' }} {{ $numeric ? 'num' : '' }}"
                                         type="{{ $numeric ? 'number' : 'text' }}" @if ($numeric) inputmode="decimal" step="{{ $definition['type'] === 'int' ? 1 : 'any' }}" min="{{ $definition['min'] ?? 0 }}" max="{{ $definition['max'] ?? '' }}" @endif
                                         value="{{ old($input, \App\Support\Settings::get($field)) }}" placeholder="{{ $definition['default'] }}" @if ($errors->has($input)) aria-invalid="true" @endif>
                                     @isset($definition['suffix'])<span class="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-sm text-subtle">{{ $definition['suffix'] }}</span>@endisset
                                 </div>
+                                @endif
                                 @error($input)
                                     <p class="field-error"><x-icon name="circle-alert" />{{ $message }}</p>
                                 @else

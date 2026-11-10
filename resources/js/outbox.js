@@ -97,6 +97,9 @@ export function registerOutbox(Alpine) {
         locating: false,
         location: null,
         wardId: String(options.wardId || ''),
+        faceRequired: Boolean(options.faceRequired),
+        face: null, // {result, blob, preview} from the face check
+        consent: false,
         units: options.units || {},
         wards: options.wards || [],
         phonePreview: '',
@@ -111,6 +114,9 @@ export function registerOutbox(Alpine) {
                 if (item) {
                     this.fixing = item;
                     this.errors = item.errors || {};
+                    this.consent = Boolean(item.payload.consent);
+                    // The face photo is already queued under this registration.
+                    this.face = item.payload.face_check ? { result: item.payload.face_check, existing: true } : null;
                     this.$nextTick(() => this.fill(item.payload));
                 }
             }
@@ -178,6 +184,7 @@ export function registerOutbox(Alpine) {
             if (!payload.ward_id) errors.ward_id = ['Choose the ward.'];
             if (payload.phone && this.phonePreview.startsWith('Not')) errors.phone = ['Enter a Nigerian mobile number, e.g. 0803 123 4567.'];
             if (!payload.consent) errors.consent = ['The voter must agree before we can save their details.'];
+            else if (this.faceRequired && !this.face) errors.face = ['Do the face check before saving.'];
             return errors;
         },
 
@@ -189,6 +196,7 @@ export function registerOutbox(Alpine) {
             const data = new FormData(this.$refs.form);
             const payload = Object.fromEntries([...data.entries()].filter(([key]) => key !== '_token'));
             payload.consent = data.get('consent') === '1';
+            if (this.face) payload.face_check = JSON.parse(JSON.stringify(this.face.result));
             payload.captured_at = new Date().toISOString();
             if (this.location) Object.assign(payload, this.location);
 
@@ -200,6 +208,12 @@ export function registerOutbox(Alpine) {
 
             const label = payload.name.trim();
             this.saved = this.fixing ? await box().replace(this.fixing.id, payload, label) : await box().add('voter', payload, label);
+            // The face photo follows its registration (sent after it).
+            if (this.face?.blob && !this.face.existing) {
+                await box().addPhoto('voter', this.saved.id, this.face.blob, `${label}: face photo`);
+                this.face.existing = true;
+            }
+            this.saved.faceStatus = this.face?.result?.status || null;
             Alpine.store('outbox').refresh();
             window.scrollTo({ top: 0 });
             confetti();
@@ -214,6 +228,9 @@ export function registerOutbox(Alpine) {
             this.errors = {};
             this.location = null;
             this.phonePreview = '';
+            this.face?.preview && URL.revokeObjectURL(this.face.preview);
+            this.face = null;
+            this.consent = false;
             this.wardId = keepWard;
             history.replaceState(null, '', location.pathname);
             window.scrollTo({ top: 0 });

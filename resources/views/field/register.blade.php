@@ -2,7 +2,7 @@
 @php
     $supportLevels = config('canvass.support_levels');
     $supportDots = ['strong' => 'var(--div-strong)', 'leaning' => 'var(--div-lean)', 'undecided' => 'var(--div-swing)', 'leaning_opponent' => 'var(--div-weakish)', 'opponent' => 'var(--div-weak)'];
-    $options = ['wardId' => $defaultWard, 'wards' => $wards, 'units' => $units];
+    $options = ['wardId' => $defaultWard, 'wards' => $wards, 'units' => $units, 'faceRequired' => $face !== null];
 @endphp
 <x-layouts.field title="Register a voter">
     <div x-data="registerForm(@js($options))">
@@ -15,8 +15,11 @@
             </div>
             <h1 class="text-2xl font-bold tracking-tight"><span x-text="saved?.label"></span> is registered</h1>
             <p class="mx-auto mt-2 max-w-xs text-sm text-muted">Saved on this phone<span x-show="$store.outbox.pending"> and waiting to send</span><span x-show="! $store.outbox.pending">, and sent to the server</span>.</p>
-            <p class="mt-5 inline-flex items-center gap-2 rounded-full bg-accent-soft px-4 py-2 text-base font-bold text-accent-fg">
+            <p class="mt-5 inline-flex items-center gap-2 rounded-full bg-accent-soft px-4 py-2 text-base font-bold text-accent-fg" x-show="saved?.faceStatus !== 'photo_only'">
                 <x-icon name="star" size="18" /> +{{ $points['unverified'] }} points <span class="font-medium">· {{ $points['verified'] }} once verified</span>
+            </p>
+            <p class="mt-5 inline-flex items-center gap-2 rounded-full bg-surface-2 px-4 py-2 text-base font-bold" x-show="saved?.faceStatus === 'photo_only'" x-cloak>
+                <x-icon name="star" size="18" /> {{ $points['verified'] }} points once verified
             </p>
             <div class="mt-8 flex flex-col gap-3">
                 <x-button type="button" size="xl" icon="plus" x-on:click="another()" class="w-full">Register another</x-button>
@@ -123,7 +126,7 @@
 
             <section class="rounded-2xl border-[1.5px] p-4" :class="errors.consent ? 'border-bad bg-bad-soft' : 'border-line-strong bg-surface'">
                 <label class="flex cursor-pointer items-start gap-3">
-                    <input type="checkbox" name="consent" value="1" class="checkbox mt-0.5 size-6" required>
+                    <input type="checkbox" name="consent" value="1" class="checkbox mt-0.5 size-6" required x-model="consent">
                     <span>
                         <span class="block text-base font-semibold">“{{ config('canvass.consent_text') }}”</span>
                         <span class="mt-1 block text-sm text-muted">Read this to the voter. Tick only if they say yes. <a href="{{ route('privacy') }}" class="link" target="_blank">Privacy notice</a></span>
@@ -131,6 +134,10 @@
                 </label>
                 <p class="field-error" x-show="errors.consent" data-error x-cloak><x-icon name="circle-alert" /><span x-text="errors.consent?.[0]"></span></p>
             </section>
+
+            @if ($face)
+                @include('field._face-check')
+            @endif
 
             <x-button size="xl" icon="check" class="w-full">Save voter</x-button>
         </form>

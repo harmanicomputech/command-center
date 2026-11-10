@@ -6,6 +6,7 @@ use App\Models\PollingUnit;
 use App\Models\User;
 use App\Models\Voter;
 use App\Models\Ward;
+use App\Support\FaceCheck;
 use App\Support\Phone;
 use App\Support\Settings;
 use App\Support\Time;
@@ -17,7 +18,10 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * A voter registration from the field form (through the outbox, or posted
- * directly when scripts are off). No consent, no record.
+ * directly when scripts are off). No consent, no record. The face check's
+ * outcome comes with it; its photo follows separately (PhotoController).
+ * A registration without a passed face check is still kept, so nothing an
+ * agent collected is lost, but earns points only once verified (Points).
  */
 class RegisterVoter implements SyncHandler
 {
@@ -43,6 +47,14 @@ class RegisterVoter implements SyncHandler
             'captured_at' => ['nullable', 'string', 'max:40'],
             'latitude' => ['nullable', 'numeric', 'between:4,7.5'],
             'longitude' => ['nullable', 'numeric', 'between:6.5,9'],
+            'face_check' => ['nullable', 'array'],
+            'face_check.status' => ['required_with:face_check', Rule::in(['passed', 'photo_only'])],
+            'face_check.challenges' => ['nullable', 'array', 'max:5'],
+            'face_check.challenges.*' => ['string', Rule::in(['turn', 'smile', 'blink'])],
+            'face_check.duration_ms' => ['nullable', 'integer', 'min:0', 'max:3600000'],
+            'face_check.failures' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'face_check.camera' => ['nullable', Rule::in(['user', 'environment'])],
+            'face_check.reason' => ['nullable', 'string', 'max:200'],
         ], [
             'consent.accepted' => 'The voter must agree before we can save their details.',
             'name.required' => 'Enter the voter’s name.',
@@ -88,10 +100,44 @@ class RegisterVoter implements SyncHandler
                 'longitude' => isset($data['longitude']) ? round((float) $data['longitude'], 3) : null,
                 'duplicate_of' => $original?->id,
                 'possible_duplicate' => $original !== null,
+                ...$this->faceCheck($data['face_check'] ?? null),
             ]);
 
             return ['status' => 'ok', 'data' => $this->summary($voter)];
         });
+    }
+
+    /**
+     * The face check's outcome. Passed means every prompt was followed; only
+     * which prompts and how long it took are kept (never face measurements).
+     *
+     * @param  array<string, mixed>|null  $check
+     * @return array{face_status: string, face_check: ?array<string, mixed>}
+     */
+    private function faceCheck(?array $check): array
+    {
+        if (! FaceCheck::required()) {
+            return ['face_status' => 'not_required', 'face_check' => null];
+        }
+
+        if ($check === null) {
+            return ['face_status' => 'missing', 'face_check' => null];
+        }
+
+        $challenges = array_values(array_unique($check['challenges'] ?? []));
+        $passed = $check['status'] === 'passed' && count($challenges) === 3;
+
+        return [
+            'face_status' => $passed ? 'passed' : 'photo_only',
+            'face_check' => array_filter([
+                'challenges' => $challenges ?: null,
+                'duration_ms' => $check['duration_ms'] ?? null,
+                'failures' => $check['failures'] ?? null,
+                'camera' => $check['camera'] ?? null,
+                'reason' => $passed ? null : ($check['reason'] ?? null),
+                'engine' => config('field.face_engine.version'),
+            ], fn ($value) => $value !== null),
+        ];
     }
 
     /**
@@ -122,7 +168,7 @@ class RegisterVoter implements SyncHandler
         return [
             'uuid' => $voter->uuid,
             'duplicate' => $voter->possible_duplicate,
-            'points' => $voter->possible_duplicate ? 0 : Settings::int('points.registration_unverified'),
+            'points' => $voter->possible_duplicate || ! in_array($voter->face_status, ['passed', 'not_required'], true) ? 0 : Settings::int('points.registration_unverified'),
         ];
     }
 }

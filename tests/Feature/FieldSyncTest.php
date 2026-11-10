@@ -47,7 +47,7 @@ class FieldSyncTest extends TestCase
         $this->syncVoters($this->agent, [$uuid => $payload])->assertJsonPath('results.0.status', 'ok');
 
         $voter = Voter::sole();
-        $this->assertSame(['Test Voter', '+2348000001001', 'unverified', $this->agent->id, '1'], [$voter->name, $voter->phone, $voter->status, $voter->captured_by, $voter->consent_version]);
+        $this->assertSame(['Test Voter', '+2348000001001', 'unverified', $this->agent->id, '2'], [$voter->name, $voter->phone, $voter->status, $voter->captured_by, $voter->consent_version]);
         $this->assertSame($this->ward('Izzi Ward 01')->lga_id, $voter->lga_id);
         $this->assertNotNull($voter->consent_at);
 

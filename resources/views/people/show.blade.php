@@ -19,6 +19,19 @@
         </div>
     </div>
 
+    @if ($faces->isNotEmpty())
+        <x-card class="mt-6" title="Recent face photos" description="From this person’s latest registrations. The same face on different names is a warning sign: spot-check those records." icon="scan-face">
+            <div class="grid grid-cols-3 gap-3 sm:grid-cols-6 lg:grid-cols-8">
+                @foreach ($faces as $voter)
+                    <a href="{{ $voter->facePhoto->url() }}" target="_blank" class="group min-w-0" data-no-progress>
+                        <img src="{{ $voter->facePhoto->url(true) }}" alt="Face photo of {{ $voter->name }}" class="aspect-square w-full rounded-xl border border-line object-cover transition group-hover:border-line-strong" loading="lazy">
+                        <span class="mt-1 block truncate text-xs text-muted">{{ $voter->name }}</span>
+                    </a>
+                @endforeach
+            </div>
+        </x-card>
+    @endif
+
     <x-card class="mt-6" title="Details" icon="circle-user">
         <dl class="grid grid-cols-1 gap-x-8 text-sm sm:grid-cols-2">
             @foreach ([

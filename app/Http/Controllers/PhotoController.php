@@ -8,6 +8,7 @@ use App\Models\NarrativeReport;
 use App\Models\Photo;
 use App\Models\TaskReport;
 use App\Models\User;
+use App\Models\Voter;
 use App\Services\PhotoStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ class PhotoController extends Controller
         'task_report' => [TaskReport::class, 'user_id'],
         'issue' => [Issue::class, 'reported_by'],
         'narrative_report' => [NarrativeReport::class, 'reported_by'],
+        'voter' => [Voter::class, 'captured_by'],
     ];
 
     public function upload(Request $request, PhotoStore $store): JsonResponse
@@ -46,6 +48,11 @@ class PhotoController extends Controller
         }
 
         abort_unless($owner->{$column} === $request->user()->id, 403, 'You can only add photos to your own reports.');
+
+        if ($owner instanceof Voter) {
+            return $this->storeFace($request, $owner, strtolower($data['uuid']), $store);
+        }
+
         $photo = $store->store($request->file('photo'), $owner, strtolower($data['uuid']), $request->user());
 
         return response()->json(['status' => 'ok', 'id' => $photo->id]);
@@ -61,6 +68,24 @@ class PhotoController extends Controller
             'Content-Type' => 'image/jpeg',
             'Cache-Control' => 'private, max-age=86400',
         ]);
+    }
+
+    /**
+     * A voter's face photo from the face check: one per registration (a
+     * retake replaces the old one). Its arrival lets a passed check earn
+     * points. Erased records take no photo.
+     */
+    private function storeFace(Request $request, Voter $voter, string $uuid, PhotoStore $store): JsonResponse
+    {
+        if ($voter->erased_at !== null) {
+            return response()->json(['status' => 'ok', 'message' => 'This registration was erased.']);
+        }
+
+        $photo = $store->store($request->file('photo'), $voter, $uuid, $request->user());
+        Photo::query()->where('owner_type', 'voter')->where('owner_id', $voter->id)->whereKeyNot($photo->id)->get()->each(fn (Photo $old) => $store->delete($old));
+        $voter->forceFill(['face_photo_at' => $voter->face_photo_at ?? now()])->save();
+
+        return response()->json(['status' => 'ok', 'id' => $photo->id]);
     }
 
     /**
@@ -99,6 +124,8 @@ class PhotoController extends Controller
             $owner instanceof Issue => Issue::query()->visibleTo($user)->whereKey($owner->id)->exists(),
             $owner instanceof Event => Event::query()->visibleTo($user)->whereKey($owner->id)->exists(),
             $owner instanceof NarrativeReport => NarrativeReport::query()->visibleTo($user)->whereKey($owner->id)->exists(),
+            // Face photos: staff in the voter's area only (not agents, even the one who took it).
+            $owner instanceof Voter => ! $user->role->usesFieldApp() && $owner->erased_at === null && Voter::query()->inAreaOf($user)->whereKey($owner->id)->exists(),
             default => false,
         };
     }

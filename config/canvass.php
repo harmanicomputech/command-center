@@ -36,8 +36,9 @@ return [
     | Consent. Change the version whenever the text changes: each record keeps
     | the version its voter agreed to.
     */
-    'consent_version' => '1',
+    'consent_version' => '2',
 
-    'consent_text' => 'I agree that the campaign can store my details and contact me.',
+    // Version 2 added the face photo (the face check on registration).
+    'consent_text' => 'I agree that the campaign can store my details and a photo of my face, and contact me.',
 
 ];

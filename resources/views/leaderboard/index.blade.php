@@ -74,7 +74,7 @@
                         <div class="flex justify-between gap-3 py-2 first:pt-0"><dt class="text-muted">{{ $field['label'] }}</dt><dd class="num font-semibold">{{ \App\Support\Settings::int($key) }}</dd></div>
                     @endforeach
                 </dl>
-                <p class="mt-3 text-xs text-subtle">Invalid registrations and unresolved duplicates earn nothing.</p>
+                <p class="mt-3 text-xs text-subtle">Invalid registrations and unresolved duplicates earn nothing.@if (\App\Support\FaceCheck::required()) Before verification, a registration earns points only when its face check passed.@endif</p>
             </x-card>
             <x-card title="Rewards" description="Given to last week’s winners." icon="medal">
                 @forelse ($rewards as $reward)

@@ -43,6 +43,16 @@ return [
     'photo_thumb_side' => 400,
     'photo_max_kb' => 6144,
 
+    // The face check on voter registration (resources/js/face-check.js).
+    // The engine version must match @mediapipe/tasks-vision in package.json
+    // (the build copies it to public/build/face/<version>/; GuardTest checks).
+    'face_engine' => [
+        'version' => '1.1.1',
+        'files' => ['vision_wasm_internal.js', 'vision_wasm_internal.wasm', 'face_landmarker.task'],
+        // Download size shown to agents when the build isn't on disk (development).
+        'bytes' => 17_600_000,
+    ],
+
     // Anti-gaming review thresholds (flags are for coordinators only, never public).
     'burst_count' => 8,
     'burst_minutes' => 10,

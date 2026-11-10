@@ -21,7 +21,8 @@ use Illuminate\Support\Collection;
  * Points, worked out from the records themselves (so verifying or
  * invalidating a registration changes the score at once):
  *
- *   verified registration 10 · unverified 3 (invalid and unresolved
+ *   verified registration 10 · unverified 3, once its face check passed
+ *   and the photo arrived (App\Support\FaceCheck; invalid and unresolved
  *   duplicates 0) · task done with proof 15 · accepted issue 5 ·
  *   event attended 5 · survey response collected 2 (Settings → Points)
  *
@@ -49,7 +50,8 @@ class Points
         $only = fn ($query, string $column) => $userIds === null ? $query : $query->whereIn($column, $userIds);
 
         $registrations = $window($only(Voter::query()->counted(), 'captured_by'), 'captured_at')
-            ->selectRaw("captured_by as user_id, count(*) as n, sum(case when status = 'verified' then 1 else 0 end) as verified")
+            ->selectRaw("captured_by as user_id, count(*) as n, sum(case when status = 'verified' then 1 else 0 end) as verified, "
+                ."sum(case when status != 'verified' and (face_status = 'not_required' or (face_status = 'passed' and face_photo_at is not null)) then 1 else 0 end) as earning")
             ->groupBy('captured_by')->get()->keyBy('user_id');
 
         $tasks = $window($only(TaskReport::query()->where('done', true), 'user_id'), 'reported_at')
@@ -78,6 +80,7 @@ class Points
         return $ids->mapWithKeys(function ($id) use ($registrations, $tasks, $issues, $events, $surveys, $value) {
             $all = (int) ($registrations[$id]->n ?? 0);
             $verified = (int) ($registrations[$id]->verified ?? 0);
+            $earning = (int) ($registrations[$id]->earning ?? 0);
             $row = [
                 'registrations' => $all,
                 'verified' => $verified,
@@ -86,7 +89,7 @@ class Points
                 'events' => (int) ($events[$id] ?? 0),
                 'surveys' => (int) ($surveys[$id] ?? 0),
             ];
-            $row['points'] = $verified * $value['verified'] + ($all - $verified) * $value['unverified']
+            $row['points'] = $verified * $value['verified'] + $earning * $value['unverified']
                 + $row['tasks'] * $value['task'] + $row['issues'] * $value['issue'] + $row['events'] * $value['event'] + $row['surveys'] * $value['survey'];
 
             return [(int) $id => $row];

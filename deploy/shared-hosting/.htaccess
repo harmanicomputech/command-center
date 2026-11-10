@@ -31,15 +31,20 @@
 
 # Small pages on 3G: compress text responses.
 <IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript application/json application/manifest+json image/svg+xml
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript application/json application/manifest+json image/svg+xml application/wasm
 </IfModule>
 
 AddType application/manifest+json .webmanifest
+AddType application/wasm .wasm
 
 <IfModule mod_headers.c>
     # Built CSS/JS have hashed names; fonts and icons rarely change.
     <FilesMatch "\.(css|js|png|woff2)$">
         Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+    # The face check's engine sits in a versioned folder: never changes.
+    <FilesMatch "\.(wasm|task)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
     # The service worker must always be re-checked, or updates never arrive.
     <Files "sw.js">

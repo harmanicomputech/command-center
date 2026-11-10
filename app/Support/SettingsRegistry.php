@@ -10,7 +10,7 @@ namespace App\Support;
 class SettingsRegistry
 {
     /**
-     * @return array<string, array{title: string, description: string, fields: array<string, array{label: string, type: string, default: string, help?: string, min?: int|float, max?: int|float, suffix?: string}>}>
+     * @return array<string, array{title: string, description: string, fields: array<string, array{label: string, type: string, default: string, help?: string, min?: int|float, max?: int|float, suffix?: string, options?: array<string, string>}>}>
      */
     public static function groups(): array
     {
@@ -64,12 +64,22 @@ class SettingsRegistry
                     'target.total' => ['label' => 'Campaign total', 'type' => 'int', 'default' => '500000', 'min' => 1, 'max' => 10000000, 'suffix' => 'voters'],
                 ],
             ],
+            'registration' => [
+                'title' => 'Voter registration',
+                'description' => 'Checks that each registration is a real person.',
+                'fields' => [
+                    'canvass.face_check' => ['label' => 'Face check', 'type' => 'select', 'default' => 'required', 'options' => [
+                        'required' => 'Required: the voter turns, smiles and blinks on camera',
+                        'off' => 'Off',
+                    ], 'help' => 'With it on, a registration earns points before verification only when its face check passed. A plain photo (on phones that can’t run the check) counts once a coordinator verifies it.'],
+                ],
+            ],
             'points' => [
                 'title' => 'Points',
                 'description' => 'What each action earns on the leaderboards. Points are worked out from the records, so a change applies to everyone’s totals at once.',
                 'fields' => [
                     'points.registration_verified' => ['label' => 'Verified registration', 'type' => 'int', 'default' => '10', 'min' => 0, 'max' => 1000, 'suffix' => 'points'],
-                    'points.registration_unverified' => ['label' => 'Registration, not yet verified', 'type' => 'int', 'default' => '3', 'min' => 0, 'max' => 1000, 'suffix' => 'points', 'help' => 'Goes up to the verified amount once a coordinator verifies it.'],
+                    'points.registration_unverified' => ['label' => 'Registration, not yet verified', 'type' => 'int', 'default' => '3', 'min' => 0, 'max' => 1000, 'suffix' => 'points', 'help' => 'Goes up to the verified amount once a coordinator verifies it. With the face check on, only registrations whose check passed earn this before verification.'],
                     'points.task' => ['label' => 'Task completed with proof', 'type' => 'int', 'default' => '15', 'min' => 0, 'max' => 1000, 'suffix' => 'points'],
                     'points.issue' => ['label' => 'Issue report accepted', 'type' => 'int', 'default' => '5', 'min' => 0, 'max' => 1000, 'suffix' => 'points'],
                     'points.survey' => ['label' => 'Survey response', 'type' => 'int', 'default' => '2', 'min' => 0, 'max' => 1000, 'suffix' => 'points'],

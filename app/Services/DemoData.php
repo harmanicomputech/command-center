@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Lga;
+use App\Models\Photo;
 use App\Models\PollingUnit;
 use App\Models\User;
 use App\Models\Ward;
@@ -141,6 +142,14 @@ class DemoData
     {
         @set_time_limit(600);
         $removed = [];
+
+        // Photos taken against demo records (face checks, task proof, ...): files and rows.
+        $store = app(PhotoStore::class);
+        foreach (['voter' => 'voters', 'task_report' => 'task_reports', 'issue' => 'issues', 'narrative_report' => 'narrative_reports', 'event' => 'events'] as $type => $table) {
+            DB::table('demo_records')->where('table_name', $table)->pluck('record_id')->chunk(1000)->each(
+                fn ($ids) => Photo::query()->where('owner_type', $type)->whereIn('owner_id', $ids->all())->get()->each(fn (Photo $photo) => $store->delete($photo))
+            );
+        }
 
         DB::transaction(function () use (&$removed) {
             foreach (self::TABLES as $table) {

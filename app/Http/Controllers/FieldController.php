@@ -14,6 +14,7 @@ use App\Services\Badges;
 use App\Services\Field\AgentStats;
 use App\Services\Field\RegisterVoter;
 use App\Services\Points;
+use App\Support\FaceCheck;
 use App\Support\Settings;
 use App\Support\Time;
 use Illuminate\Http\RedirectResponse;
@@ -65,6 +66,7 @@ class FieldController extends Controller
             'units' => $units->all(),
             'defaultWard' => $user->ward_id ?? $wards->first()?->id,
             'points' => ['unverified' => Settings::int('points.registration_unverified'), 'verified' => Settings::int('points.registration_verified')],
+            'face' => FaceCheck::options(),
         ]);
     }
 

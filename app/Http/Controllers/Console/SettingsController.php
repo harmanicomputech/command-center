@@ -34,6 +34,7 @@ class SettingsController extends Controller
             $rules[$this->input($key)] = match ($field['type']) {
                 'int' => ['required', 'integer', 'min:'.($field['min'] ?? 0), 'max:'.($field['max'] ?? PHP_INT_MAX)],
                 'number' => ['required', 'numeric', 'min:'.($field['min'] ?? 0), 'max:'.($field['max'] ?? PHP_INT_MAX)],
+                'select' => ['required', 'in:'.implode(',', array_keys($field['options']))],
                 default => ['nullable', 'string', 'max:255'],
             };
         }

@@ -71,6 +71,9 @@ class PeopleController extends Controller
                 'events' => $person->belongsToMany(Event::class)->where('status', Event::HELD)->count(),
             ],
             'daily' => $this->daily($person),
+            // Their latest face photos side by side: the same face on several names stands out.
+            'faces' => Voter::query()->inAreaOf($request->user())->where('captured_by', $person->id)->whereNull('erased_at')->whereNotNull('face_photo_at')
+                ->with('facePhoto')->latest('captured_at')->limit(24)->get()->filter->facePhoto,
         ]);
     }
 

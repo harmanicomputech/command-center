@@ -117,4 +117,19 @@ class GuardTest extends TestCase
 
         $this->assertSame([], $long, 'Give these an explicit shorter name in the migration.');
     }
+
+    /**
+     * The face check: the engine version the phones are told to load is the
+     * one the build copies, and the model is the reviewed file.
+     */
+    public function test_the_face_engine_matches_the_build(): void
+    {
+        $package = json_decode(file_get_contents(base_path('package.json')), true);
+        $this->assertSame(config('field.face_engine.version'), $package['dependencies']['@mediapipe/tasks-vision'] ?? null, 'Pin the exact version in package.json and config/field.php.');
+
+        $model = base_path('resources/face/face_landmarker.task');
+        $this->assertFileExists($model);
+        preg_match('/SHA-256: `([0-9a-f]{64})`/', file_get_contents(base_path('resources/face/README.md')), $match);
+        $this->assertSame($match[1] ?? null, hash_file('sha256', $model));
+    }
 }

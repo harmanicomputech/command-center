@@ -7,6 +7,9 @@
  *   network first, falling back to the last copy seen.
  * - Never cached: anything else, and above all pages or API responses with
  *   phone numbers or other personal data (users, registrations, exports).
+ * - The face check's engine (/build/face/<version>/, about 17 MB): cache
+ *   first in its own cache, kept across releases so agents download it once;
+ *   older engine versions are dropped when a new one is stored.
  * - The page cache is cleared on logout.
  * Bump VERSION on every release (scripts/build-shared-hosting.sh does it).
  */
@@ -15,6 +18,7 @@ importScripts('/outbox.js');
 const VERSION = 'v5';
 const SHELL = `cc-shell-${VERSION}`;
 const PAGES = 'cc-pages';
+const FACE = 'cc-face';
 const SHELL_FILES = [
   '/offline',
   '/outbox.js',
@@ -75,6 +79,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (url.pathname.startsWith('/build/face/')) {
+    event.respondWith(face(request, url));
+    return;
+  }
+
   if (/^\/(build|fonts|icons)\//.test(url.pathname) || url.pathname === '/manifest.webmanifest' || url.pathname === '/outbox.js') {
     event.respondWith(shell(request));
   }
@@ -111,6 +120,24 @@ async function shell(request) {
   if (response.ok) {
     const cache = await caches.open(SHELL);
     cache.put(request, response.clone());
+  }
+  return response;
+}
+
+async function face(request, url) {
+  const cache = await caches.open(FACE);
+  const cached = await cache.match(url.pathname);
+  if (cached) {
+    return cached;
+  }
+
+  const response = await fetch(request);
+  if (response.ok && response.status === 200) {
+    await cache.put(url.pathname, response.clone());
+    // A new engine version: forget the old one.
+    const version = url.pathname.split('/')[3];
+    const keys = await cache.keys();
+    await Promise.all(keys.filter((key) => new URL(key.url).pathname.split('/')[3] !== version).map((key) => cache.delete(key)));
   }
   return response;
 }

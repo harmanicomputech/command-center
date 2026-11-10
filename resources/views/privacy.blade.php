@@ -14,12 +14,15 @@
                     <li>Your ward and, if you say, your polling unit and community.</li>
                     <li>How you feel about the campaign and the issue that matters most to you.</li>
                     <li>That you agreed, when, and which volunteer registered you.</li>
+                    @if (\App\Support\FaceCheck::required())
+                        <li>A photo of your face, taken when you were registered. You were asked to turn your head, smile and blink, so the campaign knows a real person agreed. The check runs on the volunteer’s phone: we keep only the photo and which steps you completed, never measurements of your face, and we don’t use it to recognise you.</li>
+                    @endif
                 </ul>
                 <p class="mt-3 text-muted">We never record your religion, ethnicity or voter card (PVC/VIN) number.</p>
             </section>
             <section>
                 <h2 class="text-lg font-semibold">Why</h2>
-                <p class="mt-2 text-muted">To understand what people in each ward care about, to plan the campaign, and to contact you about it. Your political opinion is sensitive personal data: we use it only with your consent, and only people working for the campaign in your area can see your record.</p>
+                <p class="mt-2 text-muted">To understand what people in each ward care about, to plan the campaign, and to contact you about it. Your political opinion is sensitive personal data: we use it only with your consent, and only people working for the campaign in your area can see your record.@if (\App\Support\FaceCheck::required()) Your photo is used only to check that registrations are genuine; only campaign coordinators in your area can see it, and it is deleted with the rest of your details.@endif</p>
             </section>
             <section>
                 <h2 class="text-lg font-semibold">Your choices</h2>

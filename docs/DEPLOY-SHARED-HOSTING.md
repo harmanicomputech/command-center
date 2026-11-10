@@ -68,6 +68,14 @@ Under **Users**, add LGA leaders and ward coordinators (email and password) and 
 
 **System → Demo data → Load demo data** fills every screen with fictional records (made-up names, 0800 numbers) and shows demo sign-ins for a leader, a coordinator and a field agent. Present from a private window as each role. **Remove demo data** before real work starts; it deletes only what it added.
 
+## 10. The face check on voter registration
+
+Registration asks the voter to turn their head, smile and blink on camera, then keeps one photo of their face (**Settings → Voter registration** turns it off). The check runs on the phone with a face engine from the build (`public_html/build/face/`, about 17 MB, or about 7 MB where the host compresses `.wasm`: the `.htaccess` asks it to). Each phone downloads it once, the first time it opens **Register**, and keeps it for offline use across updates.
+
+- The camera needs **HTTPS** (already enforced) and the agent's permission the first time.
+- **In an Android app that wraps the site in a WebView** (for the Play Store), the wrapper must allow the camera, or the check falls back to a plain photo: add `<uses-permission android:name="android.permission.CAMERA"/>` to the manifest, ask for the camera permission at runtime, and grant the page's request in `WebChromeClient.onPermissionRequest` (`request.grant(request.getResources())` for this site only). The WebView must also allow JavaScript, DOM storage and media playback without a gesture.
+- Phones too old for the engine (no WebAssembly SIMD, Chrome before 91) take a plain photo instead; those registrations count once a coordinator verifies them.
+
 ## Updating
 
 Upload `command-center-shared-hosting-update.zip` (it has no `.env`, so your settings are kept), extract it over the old files, then press **System → Update database**. Each build gives the service worker a new version, so phones pick up the release on their next visit.

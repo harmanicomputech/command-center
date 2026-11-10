@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DataRequest;
 use App\Models\Influencer;
+use App\Models\Photo;
 use App\Models\SmsOptOut;
 use App\Models\SurveyResponse;
 use App\Models\User;
@@ -19,13 +20,14 @@ use Illuminate\Support\Facades\DB;
  * Erasing personal data (NDPA): a voter's name, number, community, notes
  * and location go; the anonymous fields (ward, age band, gender,
  * occupation, support, top issue) stay so totals and zones don't change.
+ * The face photo is deleted with the files.
  * The number is added to the SMS opt-out list (as a keyed hash) so an
  * erased person is never messaged again.
  */
 class Erasure
 {
     /** Voter fields that identify a person. */
-    private const PERSONAL = ['name' => null, 'phone' => null, 'phone_hash' => null, 'community' => null, 'notes' => null, 'latitude' => null, 'longitude' => null, 'verification_note' => null];
+    private const PERSONAL = ['name' => null, 'phone' => null, 'phone_hash' => null, 'community' => null, 'notes' => null, 'latitude' => null, 'longitude' => null, 'verification_note' => null, 'face_check' => null];
 
     /**
      * Erase every voter record with this number. Returns how many.
@@ -112,6 +114,17 @@ class Erasure
 
     private function eraseQuery($query): int
     {
-        return DB::transaction(fn () => $query->whereNull('erased_at')->update([...self::PERSONAL, 'duplicate_of' => null, 'erased_at' => now(), 'updated_at' => now()]));
+        $ids = (clone $query)->whereNull('erased_at')->pluck('id');
+        if ($ids->isEmpty()) {
+            return 0;
+        }
+
+        $erased = DB::transaction(fn () => Voter::query()->whereIn('id', $ids)->update([...self::PERSONAL, 'duplicate_of' => null, 'erased_at' => now(), 'updated_at' => now()]));
+
+        // Face photos: the files first, then their rows.
+        $store = app(PhotoStore::class);
+        Photo::query()->where('owner_type', 'voter')->whereIn('owner_id', $ids)->get()->each(fn (Photo $photo) => $store->delete($photo));
+
+        return $erased;
     }
 }
