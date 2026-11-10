@@ -13,6 +13,7 @@
 // takes a plain photo instead: "photo only", which earns points only once a
 // coordinator verifies the registration.
 import { Liveness, measure } from './liveness';
+import { compressImage } from './photos';
 
 const PHOTO_SIDE = 480;
 
@@ -236,7 +237,6 @@ export function registerFaceCheck(Alpine) {
             if (!file) {
                 return;
             }
-            const { compressImage } = await import('./photos');
             const blob = await compressImage(file, PHOTO_SIDE * 2, 0.85);
             this.done({ status: 'photo_only', reason: this.reason || 'Camera not available' }, blob);
         },

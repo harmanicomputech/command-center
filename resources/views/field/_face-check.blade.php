@@ -43,7 +43,7 @@
                 <video id="face-video" playsinline muted autoplay class="absolute inset-0 size-full object-cover" :class="mirrored ? '-scale-x-100' : ''"></video>
 
                 {{-- The oval the face goes in; the rest of the picture is dimmed. --}}
-                <div class="pointer-events-none absolute top-1/2 left-1/2 aspect-[3/4] w-[68vw] max-w-[320px] -translate-x-1/2 -translate-y-[54%] rounded-[50%] border-[3px] transition-colors duration-300"
+                <div x-show="state !== 'fallback' || cameraWorks" class="pointer-events-none absolute top-1/2 left-1/2 aspect-[3/4] w-[68vw] max-w-[320px] -translate-x-1/2 -translate-y-[54%] rounded-[50%] border-[3px] transition-colors duration-300"
                     style="box-shadow: 0 0 0 200vmax rgb(0 0 0 / .55)"
                     :class="state === 'camera' && view.stage === 'challenge' ? 'border-accent' : (state === 'camera' && view.stage === 'capture' ? 'border-good' : 'border-white/80')"></div>
 

@@ -27,9 +27,10 @@ ZIP="$DIST/$APP-shared-hosting$SUFFIX.zip"
 
 rm -rf "$BUILD" && mkdir -p "$BUILD/$APP" "$BUILD/public_html" "$DIST"
 
-# Application code (tracked files only, so local .env / databases never leak).
+# Application code (tracked files only, so local .env / databases never leak;
+# the face model is only needed by the build, which copies it to public_html).
 git -C "$ROOT" ls-files -z --cached --others --exclude-standard \
-  | grep -zv -E '^(tests/|\.github/|deploy/|scripts/|public/|docs/|phpunit\.xml|node_modules/)' \
+  | grep -zv -E '^(tests/|\.github/|deploy/|scripts/|public/|docs/|phpunit\.xml|node_modules/|resources/face/)' \
   | (cd "$ROOT" && while IFS= read -r -d '' file; do
       [ -f "$file" ] && cp --parents "$file" "$BUILD/$APP"
     done)
