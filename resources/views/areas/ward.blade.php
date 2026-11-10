@@ -1,11 +1,14 @@
 <x-layouts.app :title="$ward->name">
-    <x-page-header :title="$ward->name" :eyebrow="$lga->name.' LGA'" :back="route('areas.lga', $lga)"
+    <x-page-header :title="$ward->name" :eyebrow="$lga->name.' LGA'.($ward->hasOwnName() ? ' · '.$ward->register_name : '')" :back="route('areas.lga', $lga)"
         description="{{ $ward->polling_units_count }} polling units · {{ number_format($ward->registered_voters) }} registered voters · {{ number_format($registrations) }} canvassed">
         <x-slot:actions>
             @if ($health && $health['red'])
                 <x-badge tone="bad" dot>{{ implode(' · ', $health['reasons']) }}</x-badge>
             @elseif ($health)
                 <x-badge tone="good" dot>Structure healthy</x-badge>
+            @endif
+            @if (auth()->user()->isAdmin())
+                <x-button type="button" variant="secondary" size="sm" icon="pencil" x-data x-on:click="$dispatch('open-modal', 'ward-name')">{{ $ward->hasOwnName() ? 'Rename' : 'Add its name' }}</x-button>
             @endif
         </x-slot:actions>
     </x-page-header>
@@ -128,6 +131,20 @@
             </x-table>
         </div>
     </div>
+
+    @if (auth()->user()->isAdmin())
+        <x-modal name="ward-name" title="Ward name">
+            <form method="post" action="{{ route('wards.rename', $ward) }}" class="space-y-6">
+                @csrf @method('put')
+                <x-input name="name" label="Name" :value="$ward->hasOwnName() ? $ward->name : ''" :placeholder="$ward->register_name ?? $ward->name" autocomplete="off"
+                    hint="The ward’s real name, as people know it. Agents see it with the register’s number, e.g. “Azuiyiokwu (Ward 01)”. Leave it empty to go back to the register’s label." />
+                <div class="flex justify-end gap-2">
+                    <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal')">Cancel</x-button>
+                    <x-button icon="check">Save name</x-button>
+                </div>
+            </form>
+        </x-modal>
+    @endif
 
     <x-modal name="influencer" title="Add an influence note">
         <form method="post" action="{{ route('influencers.store') }}" class="space-y-6">

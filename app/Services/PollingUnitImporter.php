@@ -101,10 +101,7 @@ class PollingUnitImporter
 
             foreach ($rows as $row) {
                 $key = $row['lga'].'|'.$row['ward'];
-                $wardIds[$key] ??= Ward::query()->firstOrCreate(
-                    ['lga_id' => $lgaIds[$row['lga']], 'name' => $row['ward']],
-                    ['slug' => Str::slug($row['ward'])],
-                )->id;
+                $wardIds[$key] ??= $this->ward($lgaIds[$row['lga']], substr($row['code'], 0, 8), $row['ward'])->id;
             }
 
             foreach (array_chunk(array_values($rows), 500) as $chunk) {
@@ -126,6 +123,44 @@ class PollingUnitImporter
         });
 
         return ['created' => count($rows) - $existing, 'updated' => $existing, 'errors' => $errors];
+    }
+
+    /**
+     * The ward for a register row: by its code (from the polling unit codes)
+     * first, so a register with different labels (INEC's real ward names)
+     * renames the ward in place and every record attached to it stays; a
+     * name an admin gave the ward is kept.
+     */
+    private function ward(int $lgaId, string $code, string $label): Ward
+    {
+        $ward = Ward::query()->where('lga_id', $lgaId)->where('code', $code)->first()
+            ?? Ward::query()->where('lga_id', $lgaId)->where(fn ($query) => $query->where('name', $label)->orWhere('register_name', $label))->first();
+
+        if ($ward === null) {
+            return Ward::query()->create(['lga_id' => $lgaId, 'name' => $label, 'slug' => $this->freeSlug($lgaId, $label), 'code' => $code, 'register_name' => $label]);
+        }
+
+        $ward->code ??= $code;
+        if ($ward->register_name !== $label) {
+            $named = $ward->hasOwnName();
+            $ward->register_name = $label;
+            if (! $named && ! Ward::query()->where('lga_id', $lgaId)->where('name', $label)->whereKeyNot($ward->id)->exists()) {
+                $ward->name = $label;
+            }
+        }
+        $ward->isDirty() && $ward->save();
+
+        return $ward;
+    }
+
+    private function freeSlug(int $lgaId, string $label): string
+    {
+        $slug = $base = Str::slug($label);
+        for ($i = 2; Ward::query()->where('lga_id', $lgaId)->where('slug', $slug)->exists(); $i++) {
+            $slug = "{$base}-{$i}";
+        }
+
+        return $slug;
     }
 
     /**

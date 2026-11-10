@@ -66,7 +66,7 @@
                     @csrf
                     <p class="text-sm font-semibold">Replace or update from a CSV</p>
                     <input type="file" name="file" accept=".csv,text/csv" class="input" aria-label="Register CSV">
-                    <p class="hint !mt-0">Columns: code, name, ward, lga, registered_voters. Rows are matched by PU code, so nothing is duplicated. Leave empty to reload the bundled file.</p>
+                    <p class="hint !mt-0">Columns: code, name, ward, lga, registered_voters. Rows are matched by PU code, so nothing is duplicated, and wards by the code inside it, so a register with real ward names renames them in place. Leave empty to reload the bundled file.</p>
                     <x-checkbox name="official" label="This is INEC’s official register" description="Confirms the figures and removes the warning." />
                     <x-button variant="secondary" icon="upload">Import register</x-button>
                 </form>
@@ -79,6 +79,26 @@
                     </form>
                 @endunless
             </div>
+        </x-card>
+
+        @php $named = \App\Models\Ward::query()->whereColumn('name', '!=', 'register_name')->count(); @endphp
+        <x-card title="Ward names" id="ward-names" icon="map-pinned"
+            description="The bundled register numbers its wards (“Abakaliki Ward 01”). Give them the names people use: agents then pick “Azuiyiokwu (Ward 01)” when registering, and every page shows the name.">
+            <p class="text-sm text-muted"><span class="num font-semibold text-ink">{{ $named }}</span> of {{ number_format($register['wards']) }} wards have a name.</p>
+            <ol class="mt-4 list-decimal space-y-1 pl-5 text-sm text-muted">
+                <li>Download the ward list.</li>
+                <li>Fill in the <strong class="text-ink">name</strong> column (in Excel or Google Sheets). Leave a row empty to keep it as it is.</li>
+                <li>Upload it here.</li>
+            </ol>
+            <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end">
+                <x-button :href="route('system.ward-names')" variant="secondary" icon="download" data-no-progress>Download ward list</x-button>
+                <form method="post" action="{{ route('system.ward-names.import') }}" enctype="multipart/form-data" class="flex flex-1 flex-col gap-3 sm:flex-row">
+                    @csrf
+                    <input type="file" name="file" accept=".csv,text/csv" class="input min-w-0 flex-1" aria-label="Ward names CSV" required>
+                    <x-button icon="upload">Upload names</x-button>
+                </form>
+            </div>
+            <p class="hint">One ward at a time: open it under <a href="{{ route('areas') }}" class="link">Map &amp; wards</a> and choose <strong>Add its name</strong>. Use INEC’s official names so registrations and reports match.</p>
         </x-card>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">

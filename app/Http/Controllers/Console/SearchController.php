@@ -34,8 +34,8 @@ class SearchController extends Controller
             $results[] = ['label' => $lga->name, 'detail' => "LGA · {$lga->wards_count} wards", 'url' => route('areas.lga', $lga), 'icon' => Icons::paths('map'), 'group' => 'LGAs'];
         }
 
-        foreach (Ward::query()->visibleTo($user)->with('lga')->where('wards.name', 'like', $like)->orderBy('name')->limit(6)->get() as $ward) {
-            $results[] = ['label' => $ward->name, 'detail' => "Ward · {$ward->lga->name}", 'url' => route('areas.ward', [$ward->lga, $ward->slug]), 'icon' => Icons::paths('map-pin'), 'group' => 'Wards'];
+        foreach (Ward::query()->visibleTo($user)->with('lga')->where(fn ($query) => $query->where('wards.name', 'like', $like)->orWhere('wards.register_name', 'like', $like))->orderBy('name')->limit(6)->get() as $ward) {
+            $results[] = ['label' => $ward->name, 'detail' => 'Ward · '.($ward->hasOwnName() ? $ward->register_name.' · ' : '').$ward->lga->name, 'url' => route('areas.ward', [$ward->lga, $ward->slug]), 'icon' => Icons::paths('map-pin'), 'group' => 'Wards'];
         }
 
         $digits = Phone::searchDigits($q);

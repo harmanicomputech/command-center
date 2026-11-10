@@ -35,6 +35,6 @@ trait LoadsRegister
 
     protected function ward(string $name): Ward
     {
-        return Ward::query()->where('name', $name)->firstOrFail();
+        return Ward::query()->where('name', $name)->orWhere('register_name', $name)->firstOrFail();
     }
 }

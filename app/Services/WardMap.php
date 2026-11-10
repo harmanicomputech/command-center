@@ -51,7 +51,13 @@ class WardMap
 
         $key = fn (?string $name) => Str::of((string) $name)->lower()->replace(['ward', '/'], ' ')->replaceMatches('/[^a-z0-9]+/', ' ')->trim()->toString();
         $lgaIds = Lga::query()->get()->mapWithKeys(fn (Lga $lga) => [$key($lga->name) => $lga->id]);
-        $wards = Ward::query()->get()->keyBy(fn (Ward $ward) => $ward->lga_id.'|'.$key($ward->name));
+        // By its name and by the register's label, whichever the file uses.
+        $wards = collect();
+        foreach (Ward::query()->get() as $ward) {
+            foreach (array_filter([$ward->register_name, $ward->name]) as $name) {
+                $wards[$ward->lga_id.'|'.$key($name)] = $ward;
+            }
+        }
 
         $shapes = [];
         $unmatched = [];

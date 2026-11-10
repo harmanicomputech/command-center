@@ -32,6 +32,7 @@ use App\Http\Controllers\Console\TeamController;
 use App\Http\Controllers\Console\UserController;
 use App\Http\Controllers\Console\VolunteerController;
 use App\Http\Controllers\Console\VoterController;
+use App\Http\Controllers\Console\WardNameController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\InviteController;
 use App\Http\Controllers\JoinController;
@@ -261,6 +262,9 @@ Route::middleware('auth')->group(function () {
             Route::post('/system/ward-map', [SystemController::class, 'wardMap'])->name('system.ward-map');
             Route::post('/system/register', [SystemController::class, 'importRegister'])->name('system.register');
             Route::post('/system/register/confirm', [SystemController::class, 'confirmRegister'])->name('system.register.confirm');
+            Route::get('/system/ward-names', [WardNameController::class, 'export'])->name('system.ward-names');
+            Route::post('/system/ward-names', [WardNameController::class, 'import'])->name('system.ward-names.import');
+            Route::put('/wards/{ward}/name', [WardNameController::class, 'update'])->name('wards.rename');
 
             Route::get('/audit', [AuditController::class, 'index'])->name('audit');
             Route::view('/design', 'design.index')->name('design');

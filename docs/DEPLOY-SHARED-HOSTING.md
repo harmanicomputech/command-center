@@ -68,7 +68,11 @@ Under **Users**, add LGA leaders and ward coordinators (email and password) and 
 
 **System → Demo data → Load demo data** fills every screen with fictional records (made-up names, 0800 numbers) and shows demo sign-ins for a leader, a coordinator and a field agent. Present from a private window as each role. **Remove demo data** before real work starts; it deletes only what it added.
 
-## 10. The face check on voter registration
+## 10. Ward names
+
+The bundled register numbers wards ("Abakaliki Ward 01"). Give them their real names on **System → Ward names**: download the ward list, fill in the `name` column, upload it. Or open a ward under **Map & wards** and choose **Add its name**. Agents then see "Name (Ward 01)" when registering. Uploading INEC's official register (System → Polling unit register) also renames wards in place.
+
+## 11. The face check on voter registration
 
 Registration asks the voter to turn their head, smile and blink on camera, then keeps one photo of their face (**Settings → Voter registration** turns it off). The check runs on the phone with a face engine from the build (`public_html/build/face/`, about 17 MB, or about 7 MB where the host compresses `.wasm`: the `.htaccess` asks it to). Each phone downloads it once, the first time it opens **Register**, and keeps it for offline use across updates.
 

@@ -55,14 +55,15 @@ class FieldController extends Controller
         // The agent's LGA (voters near a ward boundary); staff their area.
         $wards = Ward::query()
             ->when($lgaId && ! $user->role->isStatewide(), fn ($query) => $query->where('lga_id', $lgaId))
-            ->with('lga')->orderBy('name')->get();
+            // In register order (Ward 01, 02, ...), whatever names wards are given.
+            ->with('lga')->orderByRaw('coalesce(register_name, name)')->get();
 
         $units = PollingUnit::query()->whereIn('ward_id', $wards->pluck('id'))->orderBy('code')->get(['id', 'ward_id', 'code', 'name'])
             ->groupBy('ward_id')
             ->map(fn ($units) => $units->map(fn (PollingUnit $unit) => ['id' => $unit->id, 'name' => ($unit->name ?? $unit->inecCode()).' · '.substr($unit->code, -3)])->values());
 
         return view('field.register', [
-            'wards' => $wards->map(fn (Ward $ward) => ['id' => $ward->id, 'name' => $user->role->isStatewide() ? $ward->fullName() : $ward->name])->values()->all(),
+            'wards' => $wards->map(fn (Ward $ward) => ['id' => $ward->id, 'name' => $user->role->isStatewide() ? $ward->label().', '.$ward->lga->name : $ward->label()])->values()->all(),
             'units' => $units->all(),
             'defaultWard' => $user->ward_id ?? $wards->first()?->id,
             'points' => ['unverified' => Settings::int('points.registration_unverified'), 'verified' => Settings::int('points.registration_verified')],
@@ -200,10 +201,10 @@ class FieldController extends Controller
     private function wardChoices($user): array
     {
         $lgaId = $user->lga_id ?? $user->ward?->lga_id;
-        $wards = Ward::query()->when($lgaId && ! $user->role->isStatewide(), fn ($query) => $query->where('lga_id', $lgaId))->with('lga')->orderBy('name')->get();
+        $wards = Ward::query()->when($lgaId && ! $user->role->isStatewide(), fn ($query) => $query->where('lga_id', $lgaId))->with('lga')->orderByRaw('coalesce(register_name, name)')->get();
 
         return [
-            'wards' => $wards->mapWithKeys(fn (Ward $ward) => [$ward->id => $user->role->isStatewide() ? $ward->fullName() : $ward->name])->all(),
+            'wards' => $wards->mapWithKeys(fn (Ward $ward) => [$ward->id => $user->role->isStatewide() ? $ward->label().', '.$ward->lga->name : $ward->label()])->all(),
             'defaultWard' => $user->ward_id ?? $wards->first()?->id,
         ];
     }
