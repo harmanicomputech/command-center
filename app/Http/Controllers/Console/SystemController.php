@@ -19,6 +19,7 @@ use App\Services\RegisterStatus;
 use App\Services\WardMap;
 use App\Support\Audit;
 use App\Support\BackgroundRunner;
+use App\Support\Migrations;
 use App\Support\Secrets;
 use App\Support\Settings;
 use App\Support\Time;
@@ -36,8 +37,13 @@ use Throwable;
  */
 class SystemController extends Controller
 {
-    public function show(RegisterStatus $register, PushNotifier $notifier, WardMap $wardMap): View
+    public function show(RegisterStatus $register, PushNotifier $notifier, WardMap $wardMap): View|RedirectResponse
     {
+        // New code waiting for its database update: only the button, which needs no new columns.
+        if (Migrations::pending() !== []) {
+            return redirect()->route('system.update');
+        }
+
         $heartbeat = Time::parse(Settings::get('runner.heartbeat'));
 
         return view('system.show', [
@@ -47,7 +53,7 @@ class SystemController extends Controller
             'runnerSource' => ['web' => 'after a page visit', 'pinger' => 'by the pinger', 'cron' => 'by the host cron'][Settings::get('runner.source')] ?? null,
             'runnerUrl' => route('runner', BackgroundRunner::token()),
             'afterResponse' => BackgroundRunner::canWorkAfterResponse(),
-            'pendingMigrations' => $this->pendingMigrations(),
+            'pendingMigrations' => Migrations::pending(),
             'queue' => $this->queueCounts(),
             'pushConfigured' => $notifier->configured(),
             'pushDevices' => PushSubscription::query()->count(),
@@ -234,6 +240,17 @@ class SystemController extends Controller
     /**
      * Run pending migrations after uploading a new version.
      */
+    /**
+     * Update database, on its own: what an admin lands on when uploaded code
+     * is waiting for its database changes.
+     */
+    public function update(): View|RedirectResponse
+    {
+        return Migrations::pending() === []
+            ? redirect()->route('system')
+            : view('system.update', ['pending' => Migrations::pending()]);
+    }
+
     public function migrate(): RedirectResponse
     {
         try {
@@ -244,9 +261,10 @@ class SystemController extends Controller
             return back()->with('error', 'Could not update the database: '.$e->getMessage());
         }
 
+        Migrations::forget();
         Audit::record('system.migrate', 'Updated the database');
 
-        return back()->with('status', 'The database is up to date.');
+        return redirect()->route('system')->with('status', 'The database is up to date.');
     }
 
     /**
@@ -299,22 +317,6 @@ class SystemController extends Controller
         Settings::set('register.confirmed_at', now()->toIso8601String());
         Settings::set('register.confirmed_by', $request->user()->name);
         Audit::record('system.register_confirm', "Confirmed the register: {$what}");
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function pendingMigrations(): array
-    {
-        try {
-            $ran = DB::table('migrations')->pluck('migration')->all();
-        } catch (Throwable) {
-            return ['(no migrations table)'];
-        }
-
-        $files = array_map(fn (string $path) => basename($path, '.php'), glob(database_path('migrations/*.php')) ?: []);
-
-        return array_values(array_diff($files, $ran));
     }
 
     /**

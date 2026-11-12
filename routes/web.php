@@ -253,6 +253,7 @@ Route::middleware('auth')->group(function () {
             Route::put('/settings/{group}', [SettingsController::class, 'update'])->name('settings.update');
 
             Route::get('/system', [SystemController::class, 'show'])->name('system');
+            Route::get('/system/update', [SystemController::class, 'update'])->name('system.update');
             Route::post('/system/migrate', [SystemController::class, 'migrate'])->name('system.migrate');
             Route::post('/system/push-keys', [SystemController::class, 'pushKeys'])->name('system.push-keys');
             Route::post('/system/secrets', [SystemController::class, 'secrets'])->name('system.secrets');

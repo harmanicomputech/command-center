@@ -26,6 +26,7 @@ Every phase in the brief's build order is built, tested (94 automated tests) and
 | # | What happened | Fix | Status |
 | --- | --- | --- | --- |
 | 1 | First-admin setup failed on the host's MySQL: `1059 Identifier name 'broadcast_messages_broadcast_id_recipient_type_recipient_id_unique' is too long` | The index has a short explicit name. The migration now clears tables left by a failed earlier attempt (MySQL can't roll back table creation), so **re-running setup on the same database works**. A guard test fails on any name over 64 characters; the whole suite, the web setup from the zip and every page were run on MariaDB 10.11 (strict mode, like Laravel's MySQL connection); CI gains a MySQL job. | ✅ Fixed |
+| 2 | After uploading the face check and ward names patch, **System** and the **dashboard** gave a 500 error | The new code needs database columns that only **Update database** adds, and that button is on the System page, which also failed (MySQL rejects the missing column). Now, while a database update is waiting, admins are sent to a stand-alone **Update database** page from any page that fails, and everyone else sees "The app is being updated" instead of an error. | ✅ Fixed |
 
 ## Since phase 8
 

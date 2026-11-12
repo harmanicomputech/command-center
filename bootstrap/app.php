@@ -4,6 +4,8 @@ use App\Http\Middleware\RequireRole;
 use App\Http\Middleware\RequireStaff;
 use App\Http\Middleware\RunBackgroundWork;
 use App\Http\Middleware\TrackActivity;
+use App\Support\Migrations;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -29,4 +31,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Uploaded code whose database update hasn't run yet: admins go to
+        // the Update database button, everyone else waits a moment.
+        $exceptions->render(function (QueryException $e, Request $request) {
+            if (Migrations::pending() === []) {
+                return null;
+            }
+            if (! $request->expectsJson() && ! $request->is('api/*') && $request->user()?->isAdmin()) {
+                return redirect()->route('system.update');
+            }
+
+            return $request->expectsJson() || $request->is('api/*')
+                ? response()->json(['status' => 'error', 'message' => 'The app is being updated. Try again in a few minutes.'], 503)
+                : response()->view('errors.updating', [], 503);
+        });
     })->create();
