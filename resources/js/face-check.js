@@ -58,6 +58,8 @@ export function registerFaceCheck(Alpine) {
         facing: 'environment',
         cameras: 1,
         reason: '',
+        detail: '', // why the engine didn't load, shown small for support
+        engineFailed: false,
         cameraWorks: false,
         ready: null, // engine files on this phone: null (checking), true, false
         downloading: false,
@@ -96,6 +98,31 @@ export function registerFaceCheck(Alpine) {
             }
         },
 
+        // Why the engine didn't load, in words support can act on.
+        async diagnose(error) {
+            if (error?.message === 'nosimd') {
+                return 'No WebAssembly SIMD on this browser.';
+            }
+            for (const file of this.files) {
+                try {
+                    const response = await fetch(this.base + file, { method: 'HEAD', cache: 'no-store' });
+                    if (!response.ok) {
+                        return `${file} is missing on the server (${response.status}). Upload the latest update.`;
+                    }
+                } catch (e) {
+                    return navigator.onLine ? `${file} could not be reached.` : 'No network.';
+                }
+            }
+            const text = `${error?.name || 'Error'}: ${error?.message || error}`;
+            return text.length > 160 ? `${text.slice(0, 157)}…` : text;
+        },
+
+        // After a failed load: the engine again, from the start.
+        retryEngine() {
+            this.stop();
+            this.start();
+        },
+
         get megabytes() {
             return Math.round(this.bytes / 1e6);
         },
@@ -104,6 +131,8 @@ export function registerFaceCheck(Alpine) {
             this.open = true;
             this.state = 'loading';
             this.reason = '';
+            this.detail = '';
+            this.engineFailed = false;
             document.documentElement.classList.add('overflow-hidden');
 
             try {
@@ -119,9 +148,11 @@ export function registerFaceCheck(Alpine) {
                 live.engine = await loadEngine(this.base);
                 this.ready = true;
             } catch (error) {
+                this.engineFailed = error?.message !== 'nosimd';
                 this.fallback(error?.message === 'nosimd'
                     ? 'This phone is too old for the face check.'
                     : navigator.onLine ? 'The face check couldn’t load.' : 'The face check hasn’t been downloaded to this phone yet. Connect to the internet once to get it.', true);
+                this.detail = await this.diagnose(error);
                 return;
             }
 

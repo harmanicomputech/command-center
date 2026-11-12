@@ -80,7 +80,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.pathname.startsWith('/build/face/')) {
-    event.respondWith(face(request, url));
+    event.respondWith(face(request, url, event));
     return;
   }
 
@@ -124,20 +124,24 @@ async function shell(request) {
   return response;
 }
 
-async function face(request, url) {
-  const cache = await caches.open(FACE);
-  const cached = await cache.match(url.pathname);
+// Saving to the phone must never break loading: Safari on iPhone can refuse
+// to store files this size (storage quota), and the page still needs them.
+async function face(request, url, event) {
+  const cache = await caches.open(FACE).catch(() => null);
+  const cached = cache ? await cache.match(url.pathname).catch(() => null) : null;
   if (cached) {
     return cached;
   }
 
   const response = await fetch(request);
-  if (response.ok && response.status === 200) {
-    await cache.put(url.pathname, response.clone());
-    // A new engine version: forget the old one.
-    const version = url.pathname.split('/')[3];
-    const keys = await cache.keys();
-    await Promise.all(keys.filter((key) => new URL(key.url).pathname.split('/')[3] !== version).map((key) => cache.delete(key)));
+  if (cache && response.ok && response.status === 200) {
+    event.waitUntil((async () => {
+      await cache.put(url.pathname, response.clone());
+      // A new engine version: forget the old one.
+      const version = url.pathname.split('/')[3];
+      const keys = await cache.keys();
+      await Promise.all(keys.filter((key) => new URL(key.url).pathname.split('/')[3] !== version).map((key) => cache.delete(key)));
+    })().catch(() => {}));
   }
   return response;
 }

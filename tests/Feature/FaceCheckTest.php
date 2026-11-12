@@ -199,4 +199,31 @@ class FaceCheckTest extends TestCase
     {
         $this->get('/privacy')->assertOk()->assertSee('A photo of your face')->assertSee('never measurements of your face');
     }
+
+    public function test_the_system_page_says_whether_the_engine_is_on_the_server(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $dir = public_path('build/face/'.config('field.face_engine.version'));
+        $made = ! is_dir($dir);
+        $made && mkdir($dir, 0777, true);
+        $files = config('field.face_engine.files');
+        $existing = array_filter($files, fn ($file) => is_file("{$dir}/{$file}"));
+
+        try {
+            foreach ($files as $file) {
+                in_array($file, $existing, true) || file_put_contents("{$dir}/{$file}", 'x');
+            }
+            $this->actingAs($admin)->get('/system')->assertOk()->assertSee('All 3 files are on the server');
+
+            $moved = "{$dir}/face_landmarker.task";
+            rename($moved, $moved.'.bak');
+            $this->actingAs($admin)->get('/system')->assertOk()->assertSee('Files missing on the server')->assertSee('face_landmarker.task');
+            rename($moved.'.bak', $moved);
+        } finally {
+            foreach (array_diff($files, $existing) as $file) {
+                @unlink("{$dir}/{$file}");
+            }
+            $made && @rmdir($dir);
+        }
+    }
 }

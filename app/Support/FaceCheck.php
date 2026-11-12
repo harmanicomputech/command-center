@@ -31,6 +31,20 @@ class FaceCheck
     }
 
     /**
+     * The engine files on this server (public_html/build/face/<version>/):
+     * file => size in bytes, or null when missing. For the System page.
+     *
+     * @return array<string, ?int>
+     */
+    public static function serverFiles(): array
+    {
+        $engine = config('field.face_engine');
+        $dir = public_path("build/face/{$engine['version']}");
+
+        return collect($engine['files'])->mapWithKeys(fn (string $file) => [$file => is_file("{$dir}/{$file}") ? filesize("{$dir}/{$file}") : null])->all();
+    }
+
+    /**
      * What the registration page passes to the faceCheck component, or null
      * when the check is off.
      *

@@ -86,7 +86,9 @@
                 <div x-show="state === 'fallback'" x-cloak>
                     <p class="text-lg font-bold">Take a clear photo of the face</p>
                     <p class="mx-auto mt-1 max-w-xs text-sm text-white/75"><span x-text="reason"></span> A photo only counts once a coordinator verifies the registration.</p>
+                    <p class="mx-auto mt-2 max-w-xs text-xs break-words text-white/50" x-show="detail" x-text="'Details: ' + detail"></p>
                     <div class="mt-4">
+                        <button type="button" class="btn btn-secondary btn-lg mb-3 w-full" x-show="engineFailed" x-on:click="retryEngine()"><x-icon name="refresh-cw" /> Try the face check again</button>
                         <button type="button" class="btn btn-primary btn-xl w-full" x-show="cameraWorks" x-on:click="snap()"><x-icon name="camera" /> Take photo</button>
                         <label class="btn btn-primary btn-xl w-full" x-show="! cameraWorks">
                             <x-icon name="camera" /> Open camera

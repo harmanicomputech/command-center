@@ -81,6 +81,18 @@
             </div>
         </x-card>
 
+        @php $faceFiles = \App\Support\FaceCheck::serverFiles(); $faceMissing = array_keys(array_filter($faceFiles, fn ($size) => $size === null)); @endphp
+        <x-card title="Face check" id="face-check" icon="scan-face"
+            description="The engine phones download once (about 17 MB) to run the face check on voter registration. It must be on this server, in public_html/build/face/{{ config('field.face_engine.version') }}/.">
+            @if (! \App\Support\FaceCheck::required())
+                <x-alert tone="info">The face check is off (Settings → Voter registration).</x-alert>
+            @elseif ($faceMissing)
+                <x-alert tone="bad" title="Files missing on the server">{{ implode(', ', $faceMissing) }}. Phones fall back to a plain photo. Upload the latest update zip, including its public_html folder.</x-alert>
+            @else
+                <x-alert tone="good">All {{ count($faceFiles) }} files are on the server ({{ round(array_sum($faceFiles) / 1e6, 1) }} MB). If a phone still says “The face check couldn’t load”, the details line on that screen says why.</x-alert>
+            @endif
+        </x-card>
+
         @php $named = \App\Models\Ward::query()->whereColumn('name', '!=', 'register_name')->count(); @endphp
         <x-card title="Ward names" id="ward-names" icon="map-pinned"
             description="The bundled register numbers its wards (“Abakaliki Ward 01”). Give them the names people use: agents then pick “Azuiyiokwu (Ward 01)” when registering, and every page shows the name.">
