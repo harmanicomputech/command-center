@@ -33,7 +33,11 @@ class AccountController extends Controller
             'password' => $agent ? ['required', 'confirmed', 'regex:/^\d{4,6}$/'] : ['required', 'confirmed', Password::min(10)],
         ], ['password.regex' => 'A PIN is 4 to 6 digits.', 'current_password.current_password' => 'That isn’t your current '.($agent ? 'PIN' : 'password').'.']);
 
-        $request->user()->update(['password' => $validated['password']]);
+        if ($agent && $validated['password'] === substr((string) $request->user()->phone, -4)) {
+            return back()->withErrors(['password' => 'Choose a PIN that isn’t the end of your phone number.']);
+        }
+
+        $request->user()->forceFill(['password' => $validated['password'], 'must_change_pin' => false])->save();
         Audit::record('account.password', $agent ? 'Changed their PIN' : 'Changed their password');
 
         return back()->with('status', $agent ? 'Your PIN is changed.' : 'Your password is changed.');

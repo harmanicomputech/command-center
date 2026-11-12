@@ -7,6 +7,20 @@
         </div>
     </section>
 
+    @if ($user->must_change_pin)
+        <section class="card mt-6 border-warn p-5" id="choose-pin">
+            <h2 class="flex items-center gap-2 text-lg font-bold"><x-icon name="key-round" class="text-warn" /> Choose your own PIN</h2>
+            <p class="mt-1 text-sm text-muted">Your first PIN is the last 4 digits of your phone number, which others could guess. Choose a new one to start using the app.</p>
+            <form method="post" action="{{ route('account.password') }}" class="mt-4 space-y-4">
+                @csrf @method('put')
+                <x-input name="current_password" type="password" inputmode="numeric" label="Current PIN" autocomplete="current-password" required hint="The last 4 digits of your phone number." />
+                <x-input name="password" type="password" inputmode="numeric" label="New PIN" autocomplete="new-password" required hint="4 to 6 digits, not the end of your phone number." />
+                <x-input name="password_confirmation" type="password" inputmode="numeric" label="New PIN again" autocomplete="new-password" required />
+                <x-button class="w-full" size="xl" icon="check">Save my PIN</x-button>
+            </form>
+        </section>
+    @endif
+
     <div class="mt-6 grid grid-cols-3 gap-3">
         <div class="card p-4 text-center"><p class="num text-2xl font-bold">{{ number_format($stats['total']) }}</p><p class="text-xs text-muted">Registered</p></div>
         <div class="card p-4 text-center"><p class="num text-2xl font-bold">{{ $stats['streak'] }}</p><p class="text-xs text-muted">Day streak</p></div>
@@ -46,7 +60,7 @@
             </div>
         </div>
 
-        <details class="card group">
+        <details class="card group" @if ($errors->has('password') || $errors->has('current_password')) open @endif @if ($user->must_change_pin) hidden @endif>
             <summary class="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold">
                 <span class="flex items-center gap-3"><x-icon name="key-round" class="text-subtle" />Change my PIN</span>
                 <x-icon name="chevron-down" class="text-subtle transition-transform group-open:rotate-180" />

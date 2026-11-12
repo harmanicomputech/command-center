@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Voter;
 use App\Models\Ward;
+use App\Services\AgentImporter;
 use App\Services\Invitations;
 use App\Support\Audit;
 use App\Support\Phone;
@@ -27,14 +28,23 @@ class TeamController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $members = $user->limitToArea(User::query(), 'users.ward_id')
+        $q = trim((string) $request->query('q'));
+        $members = User::query()
+            ->where(fn ($query) => $user->limitToArea($query, 'users.ward_id')
+                // Agents enrolled from a list whose ward isn't matched yet: their LGA's leader sees them.
+                ->when($user->role === UserRole::LgaLeader && $user->lga_id, fn ($query) => $query->orWhere(fn ($query) => $query->whereNull('users.ward_id')->where('users.lga_id', $user->lga_id))))
             ->whereIn('role', [UserRole::WardCoordinator, UserRole::Agent])
             ->whereKeyNot($user->id)
-            ->with('ward.lga')
+            ->when($q !== '', function ($query) use ($q) {
+                $digits = Phone::searchDigits($q);
+                $query->where(fn ($query) => $query->where('name', 'like', '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%')
+                    ->when(strlen($digits) >= 4, fn ($query) => $query->orWhere('phone', 'like', '%'.$digits.'%')));
+            })
+            ->with('ward.lga', 'lga')
             ->orderByRaw("case role when 'ward_coordinator' then 0 else 1 end")->orderBy('name')
-            ->get();
+            ->paginate(50)->withQueryString();
 
-        $registrations = Voter::query()->counted()->whereIn('captured_by', $members->pluck('id'))
+        $registrations = Voter::query()->counted()->whereIn('captured_by', $members->getCollection()->pluck('id'))
             ->selectRaw('captured_by, count(*) as n')->groupBy('captured_by')->pluck('n', 'captured_by');
 
         return view('team.index', [
@@ -43,7 +53,23 @@ class TeamController extends Controller
             'wards' => Ward::query()->visibleTo($user)->with('lga')->orderBy('name')->get()->mapWithKeys(fn (Ward $ward) => [$ward->id => $user->role->isStatewide() || $user->role === UserRole::LgaLeader ? $ward->fullName() : $ward->name])->all(),
             'roles' => $this->invitableRoles($user),
             'invite' => session('invite'),
+            'q' => $q,
+            'imported' => session('imported'),
         ]);
+    }
+
+    /**
+     * Admins enrol field agents from a list (App\Services\AgentImporter).
+     */
+    public function import(Request $request, AgentImporter $importer): RedirectResponse
+    {
+        $request->validate(['file' => ['required', 'file', 'max:4096', 'mimetypes:text/plain,text/csv,application/csv,application/vnd.ms-excel']]);
+        @set_time_limit(300);
+
+        $result = $importer->import($request->file('file')->getRealPath(), $request->user(), $request->boolean('must_change_pin'));
+        Audit::record('team.import', "Enrolled {$result['created']} field agents from a list", ['skipped' => count($result['skipped'])], rows: $result['created']);
+
+        return redirect()->route('team')->with('imported', [...$result, 'skipped' => array_slice($result['skipped'], 0, 500), 'skippedTotal' => count($result['skipped'])]);
     }
 
     public function store(Request $request, Invitations $invitations): RedirectResponse

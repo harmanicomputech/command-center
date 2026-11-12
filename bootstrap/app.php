@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RequirePinChange;
 use App\Http\Middleware\RequireRole;
 use App\Http\Middleware\RequireStaff;
 use App\Http\Middleware\RunBackgroundWork;
@@ -20,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(RunBackgroundWork::class);
-        $middleware->web(append: [TrackActivity::class]);
+        $middleware->web(append: [TrackActivity::class, RequirePinChange::class]);
         $middleware->alias(['role' => RequireRole::class, 'staff' => RequireStaff::class]);
         // Africa's Talking callbacks carry a secret in the URL instead of a CSRF token.
         $middleware->validateCsrfTokens(except: ['api/poll/*', 'api/sms/*', 'api/volunteers/*']);

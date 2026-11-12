@@ -13,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
-#[Fillable(['name', 'email', 'phone', 'password', 'role', 'lga_id', 'ward_id', 'invited_by'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'role', 'lga_id', 'ward_id', 'invited_by', 'ward_label', 'must_change_pin'])]
 #[Hidden(['password', 'remember_token', 'invite_token_hash'])]
 class User extends Authenticatable
 {
@@ -29,6 +29,7 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'last_seen_at' => 'datetime',
             'disabled_at' => 'datetime',
+            'must_change_pin' => 'boolean',
             'invite_expires_at' => 'datetime',
             'invite_accepted_at' => 'datetime',
             'sessions_revoked_at' => 'datetime',

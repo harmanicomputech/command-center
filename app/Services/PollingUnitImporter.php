@@ -122,6 +122,9 @@ class PollingUnitImporter
             $this->recount();
         });
 
+        // A register with real ward names: agents enrolled from a list land in their wards.
+        app(WardMatcher::class)->placeWaitingAgents();
+
         return ['created' => count($rows) - $existing, 'updated' => $existing, 'errors' => $errors];
     }
 

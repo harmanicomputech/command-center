@@ -35,6 +35,8 @@ class WardNames
         }
 
         $ward->forceFill(['name' => $name, 'register_name' => $ward->register_name ?? $ward->name])->save();
+        // Agents enrolled from a list with this ward's name now land in it.
+        app(WardMatcher::class)->placeWaitingAgents($ward->lga_id);
         Aggregates::flush();
 
         return true;

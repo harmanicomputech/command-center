@@ -2,9 +2,45 @@
     <x-page-header title="Team & invites" eyebrow="Field"
         description="Invite agents by phone: they get a link, choose their own PIN and stay signed in on their phone for 30 days. If a phone is lost, sign that person out of every device.">
         <x-slot:actions>
+            @if (auth()->user()->isAdmin())
+                <x-button type="button" variant="secondary" icon="upload" x-data x-on:click="$dispatch('open-modal', 'import-agents')">Import agents</x-button>
+            @endif
             <x-button type="button" icon="user-plus" x-data x-on:click="$dispatch('open-modal', 'invite')">Invite someone</x-button>
         </x-slot:actions>
     </x-page-header>
+
+    @if ($imported)
+        <section class="card mb-6 overflow-hidden">
+            <div class="flex items-start gap-4 p-5">
+                <span class="grid size-11 flex-none place-items-center rounded-2xl bg-good-soft text-good"><x-icon name="users" /></span>
+                <div class="min-w-0">
+                    <h2 class="text-base font-semibold">{{ number_format($imported['created']) }} field {{ \Illuminate\Support\Str::plural('agent', $imported['created']) }} enrolled</h2>
+                    <p class="mt-1 text-sm text-muted">
+                        They sign in with their phone number and the last 4 digits of it as their PIN.
+                        {{ number_format($imported['placed']) }} are in their ward; the rest work in their LGA until their ward from the list matches a ward on the app (System → Ward names).
+                    </p>
+                </div>
+            </div>
+            @if ($imported['skippedTotal'] > 0)
+                <details class="border-t border-line">
+                    <summary class="cursor-pointer p-4 text-sm font-semibold text-warn">{{ number_format($imported['skippedTotal']) }} {{ \Illuminate\Support\Str::plural('row', $imported['skippedTotal']) }} not enrolled: show why</summary>
+                    <x-table class="!rounded-none !border-0 !shadow-none">
+                        <thead><tr><th class="n">Line</th><th>Name</th><th>Why</th></tr></thead>
+                        <tbody>
+                            @foreach ($imported['skipped'] as $row)
+                                <tr><td class="n">{{ $row['line'] }}</td><td>{{ $row['name'] ?: '—' }}</td><td class="text-muted">{{ $row['reason'] }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </x-table>
+                </details>
+            @endif
+        </section>
+    @endif
+
+    <form method="get" action="{{ route('team') }}" class="mb-4 flex gap-3">
+        <x-input name="q" :value="$q" icon="search" placeholder="Name or phone number" aria-label="Search the team" class="flex-1" />
+        <x-button variant="secondary" icon="search">Search</x-button>
+    </form>
 
     @if ($invite)
         <section class="card mb-6 overflow-hidden" x-data="copy(@js($invite['message']))">
@@ -32,7 +68,7 @@
                 <x-avatar :name="$member->name" :size="40" />
                 <div class="min-w-0 flex-1">
                     <p class="truncate font-semibold">{{ $member->name }}</p>
-                    <p class="truncate text-sm text-muted">{{ $member->role->label() }} · {{ $member->ward?->name }} · <span class="num">{{ \App\Support\Phone::local($member->phone) }}</span></p>
+                    <p class="truncate text-sm text-muted">{{ $member->role->label() }} · {{ $member->ward?->name ?? $member->lga?->name ?? '—' }}@if (! $member->ward_id && $member->ward_label) <span class="text-subtle">({{ $member->ward_label }}, not matched yet)</span>@endif · <span class="num">{{ \App\Support\Phone::local($member->phone) }}</span></p>
                 </div>
                 <div class="flex w-full flex-wrap items-center gap-2 pl-14 sm:w-auto sm:pl-0">
                     @if ($member->isDisabled())
@@ -57,11 +93,32 @@
                 </div>
             </div>
         @empty
+            @if ($q !== '')
+                <x-empty icon="search" title="No one matches" description="Try another name or number." />
+            @else
             <x-empty icon="users" title="No one in your team yet" description="Invite your first agent: all you need is their name and phone number.">
                 <x-button type="button" icon="user-plus" x-data x-on:click="$dispatch('open-modal', 'invite')">Invite someone</x-button>
             </x-empty>
+            @endif
         @endforelse
     </div>
+    <div class="mt-4">{{ $members->links() }}</div>
+
+    @if (auth()->user()->isAdmin())
+        <x-modal name="import-agents" title="Import field agents">
+            <form method="post" action="{{ route('team.import') }}" enctype="multipart/form-data" class="space-y-5">
+                @csrf
+                <p class="text-sm text-muted">A CSV with the columns <strong class="text-ink">name, phone, lga, ward</strong> (ward is optional). Each person signs in with their phone number, and the <strong class="text-ink">last 4 digits</strong> of it are their first PIN.</p>
+                <input type="file" name="file" accept=".csv,text/csv" class="input" aria-label="Agents CSV" required>
+                <x-checkbox name="must_change_pin" label="Make them choose their own PIN at first sign-in" description="Recommended: anyone who knows an agent’s number could guess the last 4 digits." :checked="true" />
+                <p class="hint">Rows are skipped, never guessed: numbers that aren’t Nigerian mobiles, numbers already on the app, a number on two rows, missing names or unknown LGAs. You’ll see the list after the import.</p>
+                <div class="flex justify-end gap-2">
+                    <x-button type="button" variant="secondary" x-on:click="$dispatch('close-modal')">Cancel</x-button>
+                    <x-button icon="upload">Import</x-button>
+                </div>
+            </form>
+        </x-modal>
+    @endif
 
     <x-modal name="invite" title="Invite someone">
         <form method="post" action="{{ route('team.store') }}" class="space-y-5">

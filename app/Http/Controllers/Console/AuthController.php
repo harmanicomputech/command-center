@@ -72,7 +72,9 @@ class AuthController extends Controller
         Auth::login($user, remember: $request->boolean('remember') || $user->role->usesFieldApp());
         $request->session()->regenerate();
         $request->session()->put('auth_at', now()->timestamp);
-        $user->forceFill(['last_login_at' => now(), 'last_seen_at' => now()])->saveQuietly();
+        // PINs set in bulk use a light hash (AgentImporter): bring it up to the usual strength.
+        $rehash = Hash::needsRehash($user->password) ? ['password' => Hash::make($validated['password'])] : [];
+        $user->forceFill(['last_login_at' => now(), 'last_seen_at' => now(), ...$rehash])->saveQuietly();
         Audit::record('auth.login', 'Signed in');
 
         return redirect()->intended($user->role->usesFieldApp() ? route('field.home') : route('dashboard'));
